@@ -16,8 +16,9 @@
 #define WIDTH 80
 #define HEIGHT 25
 
-void print(const char* s);
+void puts(const char* s);
+void putc(const char s);
 void scrollUp();
 void newLine();
-void reset();
+void clr();
 void updateCursor();
