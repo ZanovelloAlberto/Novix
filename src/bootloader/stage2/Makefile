@@ -1,10 +1,10 @@
 BUILD_DIR?=build/
 ASM=nasm
 ASMFLAGS= -f elf
-CC=/home/novice/opt/cross/bin/i686-elf-gcc
+CC=/home/novice/cross/i686-elf/bin/i686-elf-gcc
 CFLAG=-ffreestanding -nostdlib -std=c99 -g
-LD=/home/novice/opt/cross/bin/i686-elf-ld
-LDFLAG=-T linker.ld -nostdlib
+LD=/home/novice/cross/i686-elf/bin/i686-elf-ld
+LDFLAG=-T linker.ld -nostdlib -L /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0/
 
 
 SOURCES_C=$(wildcard *.c)
@@ -15,10 +15,10 @@ OBJECTS_ASM=$(patsubst %.asm, $(BUILD_DIR)/bootloader/asm/%.obj, $(SOURCES_ASM))
 stage2: $(BUILD_DIR)/boot0.bin
 
 $(BUILD_DIR)/boot0.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	$(LD) $(LDFLAG) -o $@ $^ -Map=$(BUILD_DIR)/stage2.map
+	$(LD) $(LDFLAG) -o $@ $^ -lgcc
 
 $(BUILD_DIR)/bootloader/c/%.obj: %.c
-	$(CC) $(CFLAG)	-c $< -o $@ 
+	$(CC) $(CFLAG) -c $< -o $@ 
 
 $(BUILD_DIR)/bootloader/asm/%.obj: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

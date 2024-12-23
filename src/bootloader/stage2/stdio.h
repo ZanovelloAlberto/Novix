@@ -18,6 +18,7 @@
 
 void puts(const char* s);
 void putc(const char s);
+void printf(const char* fmt, ...);
 void scrollUp();
 void newLine();
 void clr();
