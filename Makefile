@@ -20,8 +20,6 @@ $(BUILD_DIR)/main.img: bootloader
 	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main.img conv=notrunc
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/boot0.bin "::boot0.bin"
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
-	mmd -i $(BUILD_DIR)/main.img "::mydir"
-	mcopy -i $(BUILD_DIR)/main.img file.txt "::mydir/file.txt"
 
 
 #
@@ -41,9 +39,3 @@ kernel:
 
 clean:
 	rm -rf build/*
-	mkdir build/bootloader
-	mkdir build/bootloader/asm
-	mkdir build/bootloader/c
-	mkdir build/kernel
-	mkdir build/kernel/c
-	mkdir build/kernel/asm

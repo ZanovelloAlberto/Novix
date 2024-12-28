@@ -15,10 +15,16 @@ OBJECTS_ASM=$(patsubst %.asm, $(BUILD_DIR)/bootloader/asm/%.obj, $(SOURCES_ASM))
 stage2: $(BUILD_DIR)/boot0.bin
 
 $(BUILD_DIR)/boot0.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	$(LD) $(LDFLAG) -o $@ $^ -lgcc
+	@mkdir -p $(@D)
+	@$(LD) $(LDFLAG) -o $@ $^ -lgcc
+	@echo "--> Created:  boot0.bin"
 
 $(BUILD_DIR)/bootloader/c/%.obj: %.c
-	$(CC) $(CFLAG) -c $< -o $@ 
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAG) -c $< -o $@
+	@echo "--> Compiled: " $<
 
 $(BUILD_DIR)/bootloader/asm/%.obj: %.asm
-	$(ASM) $(ASMFLAGS) -o $@ $<
+	@mkdir -p $(@D)
+	@$(ASM) $(ASMFLAGS) -o $@ $<
+	@echo "--> Compiled: " $<

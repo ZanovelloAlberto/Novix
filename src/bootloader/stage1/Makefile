@@ -10,4 +10,5 @@ LDFLAG=-T linker.ld -nostdlib
 stage1: $(BUILD_DIR)/bootloader.bin
 
 $(BUILD_DIR)/bootloader.bin: boot.asm
-	$(ASM) boot.asm -f bin -o $(BUILD_DIR)/bootloader.bin
+	@$(ASM) boot.asm -f bin -o $(BUILD_DIR)/bootloader.bin
+	@echo "--> Created:  bootloader.bin"

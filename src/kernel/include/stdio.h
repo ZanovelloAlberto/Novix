@@ -17,18 +17,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
+#include <stdint.h>
 
-#include <hal/hal.h>
-#include <stdio.h>
+#define COLOR8_BLACK 0
+#define COLOR8_LIGHT_GREY 7
 
-void __attribute__((section(".entry"))) start(uint16_t bootDrive)
-{
-    clr();
+#define WIDTH 80
+#define HEIGHT 25
 
-    HAL_Initialize();
-
-    printf("Hello world from kernel!!!\n\r");
-
-end:
-    for (;;);
-}
+void puts(const char* s);
+void putc(const char s);
+void printf(const char* fmt, ...);
+void scrollUp();
+void newLine();
+void clr();
+void updateCursor();
