@@ -27,7 +27,9 @@ void __attribute__((section(".entry"))) start(uint16_t bootDrive)
 
     HAL_Initialize();
 
-    printf("Hello world from kernel!!!\n\r");
+    int hey;
+
+    hey = 2 / 0;
 
 end:
     for (;;);

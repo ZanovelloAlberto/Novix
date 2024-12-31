@@ -35,9 +35,9 @@ uint16_t currentColor = defaultColor;
 * update the cursor position with the line and column value
 */
 void updateCursor(){
-    unsigned short index = (line * WIDTH) + column;
+    unsigned short index = line * WIDTH + column;
     x86_outb(0x3d4, 14);  //14 tells the framebuffer to expect the highest 8 bits of the position
-    x86_outb(0x3d5, (uint8_t) index >> 8);
+    x86_outb(0x3d5, (uint8_t) (index >> 8) & 0xff);
 
     x86_outb(0x3d4, 15); //15 tells the framebuffer to expect the lowest 8 bits of the position
     x86_outb(0x3d5, (uint8_t) index & 0x00ff);

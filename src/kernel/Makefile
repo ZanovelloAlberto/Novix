@@ -15,23 +15,29 @@ HEADERS_C = $(wildcard *.h) \
 SOURCES_C =	$(wildcard *.c) \
 			$(wildcard */*.c) \
 			$(wildcard */*/*.c) \
-			$(wildcard */*/*/*.c)
+			$(wildcard */*/*/*.c) \
+			arch/i686/isrs_gen.c
 
 HEADERS_ASM = $(wildcard *.inc) \
 			  $(wildcard */*.inc) \
 			  $(wildcard */*/*.inc) \
-			  $(wildcard */*/*/*.inc)
+			  $(wildcard */*/*/*.inc) \
+			  arch/i686/isrs_gen.inc
 
 SOURCES_ASM =  $(wildcard *.asm) \
 			  $(wildcard */*.asm) \
 			  $(wildcard */*/*.asm) \
-			  $(wildcard */*/*/*.asm)
+			  $(wildcard */*/*/*.asm) \
 
 OBJECTS_C = $(patsubst %.c, $(BUILD_DIR)/kernel/c/%.obj, $(SOURCES_C))
 
 OBJECTS_ASM = $(patsubst %.asm, $(BUILD_DIR)/kernel/asm/%.obj, $(SOURCES_ASM))
 
-kernel: $(BUILD_DIR)/kernel.bin
+kernel: isr_generator $(BUILD_DIR)/kernel.bin
+
+isr_generator:
+	@./isr_generator.sh arch/i686/isrs_gen.c arch/i686/isrs_gen.inc
+	@echo "--> Generating: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc"
 
 $(BUILD_DIR)/kernel.bin: $(OBJECTS_ASM) $(OBJECTS_C)
 	@$(LD) $(LDFLAG) -o $@ $^ -lgcc
