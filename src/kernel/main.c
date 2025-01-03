@@ -20,6 +20,12 @@
 
 #include <hal/hal.h>
 #include <stdio.h>
+#include <arch/i686/irq.h>
+
+void timer(Registers* regs)
+{
+    printf(".");
+}
 
 void __attribute__((section(".entry"))) start(uint16_t bootDrive)
 {
@@ -27,9 +33,7 @@ void __attribute__((section(".entry"))) start(uint16_t bootDrive)
 
     HAL_Initialize();
 
-    int hey;
-
-    hey = 2 / 0;
+    i686_IRQ_RegisterHandler(0, timer);
 
 end:
     for (;;);

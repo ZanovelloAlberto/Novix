@@ -26,6 +26,8 @@
 #include <stddef.h>
 
 
+ISRHandler g_ISRHandlers[256];
+
 static const char* const g_Exceptions[] = {
     "Divide by zero error",
     "Debug",
@@ -77,7 +79,10 @@ void i686_ISR_Initialize()
 
 void __attribute__((cdecl)) i686_ISR_Handler(Registers* regs)
 {
-    if (regs->interrupt >= 32)
+    if (g_ISRHandlers[regs->interrupt] != NULL)
+        g_ISRHandlers[regs->interrupt](regs);
+
+    else if (regs->interrupt >= 32)
         printf("Unhandled interrupt %d!\n", regs->interrupt);
 
     else
@@ -95,4 +100,10 @@ void __attribute__((cdecl)) i686_ISR_Handler(Registers* regs)
         printf("KERNEL PANIC!\n");
         i686_Panic();
     }
+}
+
+void i686_ISR_RegisterHandler(int interrupt, ISRHandler handler)
+{
+    g_ISRHandlers[interrupt] = handler;
+    i686_IDT_EnableGate(interrupt);
 }
