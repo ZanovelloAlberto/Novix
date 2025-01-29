@@ -3,8 +3,8 @@ ASM=nasm
 ASMFLAGS= -f elf
 CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
 CFLAG=-ffreestanding -nostdlib -std=c99 -g -I include
-LD/=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LIBGCC_PATH?=/home/novice/opt/cross/i686-elf/lib/gcc/i686-elf/14.2.0/
+LD?=/home/novice/cross/i686-elf/bin/i686-elf-ld
+LIBGCC_PATH?=/home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
 LDFLAG=-T linker.ld -nostdlib -L $(LIBGCC_PATH)
 
 
