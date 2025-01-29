@@ -1,10 +1,11 @@
 BUILD_DIR?=build/
 ASM=nasm
 ASMFLAGS= -f elf
-CC=/home/novice/cross/i686-elf/bin/i686-elf-gcc
+CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
 CFLAG=-ffreestanding -nostdlib -std=c99 -g -I include
-LD=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LDFLAG=-T linker.ld -nostdlib -L /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0/
+LD/=/home/novice/cross/i686-elf/bin/i686-elf-ld
+LIBGCC_PATH?=/home/novice/opt/cross/i686-elf/lib/gcc/i686-elf/14.2.0/
+LDFLAG=-T linker.ld -nostdlib -L $(LIBGCC_PATH)
 
 
 HEADERS_C = $(wildcard *.h) \
@@ -36,6 +37,7 @@ OBJECTS_ASM = $(patsubst %.asm, $(BUILD_DIR)/kernel/asm/%.obj, $(SOURCES_ASM))
 kernel: isr_generator $(BUILD_DIR)/kernel.bin
 
 isr_generator:
+	@sed -i 's/\r//' isr_generator.sh
 	@./isr_generator.sh arch/i686/isrs_gen.c arch/i686/isrs_gen.inc
 	@echo "--> Generating: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc"
 
