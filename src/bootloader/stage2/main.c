@@ -26,7 +26,7 @@
 
 void* Kernel = (void*)0x100000;
 
-typedef void (*KernelStart)();
+typedef void (*KernelStart)(uint16_t bootDrive);
 
 void __attribute__((cdecl)) start(uint16_t bootDrive)
 {
@@ -49,7 +49,7 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
 
     // execute kernel
     KernelStart kernelStart = (KernelStart)Kernel;
-    kernelStart();
+    kernelStart(bootDrive);
 
 end:
     for (;;);

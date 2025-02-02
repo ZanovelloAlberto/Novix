@@ -18,12 +18,11 @@
 
 [bits 32]
 
-extern i686_ISR_Handler
+extern i686_ISR_handler
 
 ; cpu pushes to the stack: ss, esp, eflags, cs, eip
 
 %macro ISR_NOERRORCODE 1
-
 global i686_ISR%1:
 i686_ISR%1:
     push 0              ; push dummy error code
@@ -57,7 +56,7 @@ isr_common:
     mov gs, ax
     
     push esp            ; pass pointer to stack to C, so we can access all the pushed information
-    call i686_ISR_Handler
+    call i686_ISR_handler
     add esp, 4
 
     pop eax             ; restore old segment

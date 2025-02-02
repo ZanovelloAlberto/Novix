@@ -17,16 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #include <arch/i686/isr.h>
-#include <arch/i686/idt.h>
-#include <arch/i686/gdt.h>
 #include <arch/i686/io.h>
 #include <stdio.h>
 #include <stddef.h>
 
-
-ISRHandler g_ISRHandlers[256];
+void i686_ISR_initializeGates();
 
 static const char* const g_Exceptions[] = {
     "Divide by zero error",
@@ -63,30 +59,24 @@ static const char* const g_Exceptions[] = {
     ""
 };
 
+ISRHandler g_ISR_handlers[256];
 
-void i686_ISR_InitializeGates(); // in isrs_gen.c
-
-void i686_ISR_Initialize()
+void i686_ISR_initialze()
 {
-    printf("Initializing the ISR...\n\r");
-
-    i686_ISR_InitializeGates();
-    for (int i = 0; i < 256; i++)
-        i686_IDT_EnableGate(i);
-    
-    printf("DONE !\n\r");
+    printf("Initializing ISR...\n\r");
+    i686_ISR_initializeGates();
+    printf("Done !\n\r");
 }
 
-void __attribute__((cdecl)) i686_ISR_Handler(Registers* regs)
+void i686_ISR_handler(Registers* regs)
 {
-    if (g_ISRHandlers[regs->interrupt] != NULL)
-        g_ISRHandlers[regs->interrupt](regs);
+    if(g_ISR_handlers[regs->interrupt] != NULL)
+        g_ISR_handlers[regs->interrupt](regs);
 
     else if (regs->interrupt >= 32)
         printf("Unhandled interrupt %d!\n", regs->interrupt);
-
-    else
-    {
+    
+    else {
         printf("Unhandled exception %d %s\n", regs->interrupt, g_Exceptions[regs->interrupt]);
         
         printf("  eax=%x  ebx=%x  ecx=%x  edx=%x  esi=%x  edi=%x\n",
@@ -98,12 +88,11 @@ void __attribute__((cdecl)) i686_ISR_Handler(Registers* regs)
         printf("  interrupt=%x  errorcode=%x\n", regs->interrupt, regs->error);
 
         printf("KERNEL PANIC!\n");
-        i686_Panic();
+        i686_panic();
     }
 }
 
-void i686_ISR_RegisterHandler(int interrupt, ISRHandler handler)
+void i686_ISR_registerNewHandler(int interrupt, ISRHandler handler)
 {
-    g_ISRHandlers[interrupt] = handler;
-    i686_IDT_EnableGate(interrupt);
+    g_ISR_handlers[interrupt] = handler;
 }

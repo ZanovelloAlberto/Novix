@@ -17,28 +17,36 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 #include <stdint.h>
 
-typedef enum
-{
-    IDT_FLAG_GATE_TASK              = 0x5,
-    IDT_FLAG_GATE_16BIT_INT         = 0x6,
-    IDT_FLAG_GATE_16BIT_TRAP        = 0x7,
-    IDT_FLAG_GATE_32BIT_INT         = 0xE,
-    IDT_FLAG_GATE_32BIT_TRAP        = 0xF,
+typedef struct{
+    uint16_t offset_low;    // offset (bit 0-15)
+    uint16_t segment;       // segment
+    uint8_t reserved;       // reserved
+    uint8_t attribute;      // gate type, dpl, and p fields
+    uint16_t offset_high;   // offset (bit 16-31)
+}__attribute__((packed)) Idt_gate;
 
-    IDT_FLAG_RING0                  = (0 << 5),
-    IDT_FLAG_RING1                  = (1 << 5),
-    IDT_FLAG_RING2                  = (2 << 5),
-    IDT_FLAG_RING3                  = (3 << 5),
+typedef struct{
+    uint16_t size;
+    Idt_gate *offset;
+}__attribute__((packed)) Idt_descriptor;
 
-    IDT_FLAG_PRESENT                = 0x80,
+typedef enum{
+    IDT_ATTRIBUTE_TASK_GATE             = 0x05,
+    IDT_ATTRIBUTE_16BIT_INTERRUPT_GATE  = 0X06,
+    IDT_ATTRIBUTE_16BIT_TRAP_GATE       = 0X07,
+    IDT_ATTRIBUTE_32BIT_INTERRUPT_GATE  = 0X0E,
+    IDT_ATTRIBUTE_32BIT_TRAP_GATE       = 0X0F,
 
-} IDT_FLAGS;
+    IDT_ATTRIBUTE_DPL_RING0             = 0X00,
+    IDT_ATTRIBUTE_DPL_RING1             = 0X20,
+    IDT_ATTRIBUTE_DPL_RING2             = 0X40,
+    IDT_ATTRIBUTE_DPL_RING3             = 0X60,
 
-void i686_IDT_Initialize();
-void i686_IDT_DisableGate(int interrupt);
-void i686_IDT_EnableGate(int interrupt);
-void i686_IDT_SetGate(int interrupt, void* base, uint16_t segmentDescriptor, uint8_t flags);
+    IDT_ATTRIBUTE_PRESENT_BIT           = 0X80,
+}IDT_ATTRIBUTE_BYTE;
+
+void i686_IDT_initilize();
+void i686_IDT_setGate(int interrupt, void* offset, uint8_t attribute);

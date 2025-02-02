@@ -17,28 +17,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-#include <arch/i686/irq.h>
-#include <arch/i686/pic.h>
-#include <arch/i686/io.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <arch/i686/irq.h>
+#include <arch/i686/io.h>
+#include <arch/i686/pic.h>
 
-#define PIC_REMAP_OFFSET        0x20
+#define PIC_REMAP_OFFSET 0x20
 
-IRQHandler g_IRQHandlers[16];
+IRQHandler g_IRQ_handlers[16];
 
-void i686_IRQ_Handler(Registers* regs)
+
+void i686_IRQ_handler(Registers* regs)
 {
     int irq = regs->interrupt - PIC_REMAP_OFFSET;
     
-    uint8_t pic_isr = i686_PIC_ReadInServiceRegister();
-    uint8_t pic_irr = i686_PIC_ReadIrqRequestRegister();
+    uint8_t pic_isr = i686_PIC_readInServiceRegister();
+    uint8_t pic_irr = i686_PIC_readIrqRequestRegister();
 
-    if (g_IRQHandlers[irq] != NULL)
+    if (g_IRQ_handlers[irq] != NULL)
     {
         // handle IRQ
-        g_IRQHandlers[irq](regs);
+        g_IRQ_handlers[irq](regs);
     }
     else
     {
@@ -46,24 +46,24 @@ void i686_IRQ_Handler(Registers* regs)
     }
 
     // send EOI
-    i686_PIC_SendEndOfInterrupt(irq);
+    i686_PIC_sendEndOfInterrupt(irq);
 }
 
-void i686_IRQ_Initialize()
+void i686_IRQ_initialize()
 {
-    printf("Initializing IRQ...\n\r");
-    i686_PIC_Configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
+    i686_PIC_configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
 
-    // register ISR handlers for each of the 16 irq lines
-    for (int i = 0; i < 16; i++)
-        i686_ISR_RegisterHandler(PIC_REMAP_OFFSET + i, i686_IRQ_Handler);
+    printf("initilazing IRQ ...\n\r");
+
+    for(int i = 0; i < 16; i++)
+        i686_ISR_registerNewHandler(PIC_REMAP_OFFSET + i, i686_IRQ_handler);
 
     // enable interrupts
-    i686_EnableInterrupts();
+    i686_enableInterrupts();
     printf("Done !\n\r");
 }
 
-void i686_IRQ_RegisterHandler(int irq, IRQHandler handler)
+void i686_IRQ_registerNewHandler(int irq, IRQHandler handler)
 {
-    g_IRQHandlers[irq] = handler;
+    g_IRQ_handlers[irq] = handler;
 }

@@ -19,6 +19,7 @@
 
 
 #include <arch/i686/io.h>
+#include <arch/i686/pic.h>
 #include <stdio.h>
 
 #define PIC1_COMMAND_PORT           0x20
@@ -69,7 +70,7 @@ enum {
     PIC_CMD_READ_ISR            = 0x0B,
 } PIC_CMD;
 
-void i686_PIC_Configure(uint8_t offsetPic1, uint8_t offsetPic2)
+void i686_PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
 {
     printf("Configuring PIC...\n\r");
 
@@ -106,14 +107,14 @@ void i686_PIC_Configure(uint8_t offsetPic1, uint8_t offsetPic2)
     printf("Done !\n\r");
 }
 
-void i686_PIC_SendEndOfInterrupt(int irq)
+void i686_PIC_sendEndOfInterrupt(int irq)
 {
     if (irq >= 8)
         i686_outb(PIC2_COMMAND_PORT, PIC_CMD_END_OF_INTERRUPT);
     i686_outb(PIC1_COMMAND_PORT, PIC_CMD_END_OF_INTERRUPT);
 }
 
-void i686_PIC_Disable()
+void i686_PIC_disable()
 {
     i686_outb(PIC1_DATA_PORT, 0xFF);        // mask all
     i686_iowait();
@@ -121,7 +122,7 @@ void i686_PIC_Disable()
     i686_iowait();
 }
 
-void i686_PIC_Mask(int irq)
+void i686_PIC_mask(int irq)
 {
     uint8_t port;
 
@@ -139,7 +140,7 @@ void i686_PIC_Mask(int irq)
     i686_outb(PIC1_DATA_PORT,  mask | (1 << irq));
 }
 
-void i686_PIC_Unmask(int irq)
+void i686_PIC_unMask(int irq)
 {
     uint8_t port;
 
@@ -157,14 +158,14 @@ void i686_PIC_Unmask(int irq)
     i686_outb(PIC1_DATA_PORT,  mask & ~(1 << irq));
 }
 
-uint16_t i686_PIC_ReadIrqRequestRegister()
+uint16_t i686_PIC_readIrqRequestRegister()
 {
     i686_outb(PIC1_COMMAND_PORT, PIC_CMD_READ_IRR);
     i686_outb(PIC2_COMMAND_PORT, PIC_CMD_READ_IRR);
     return ((uint16_t)i686_inb(PIC2_COMMAND_PORT)) | (((uint16_t)i686_inb(PIC2_COMMAND_PORT)) << 8);
 }
 
-uint16_t i686_PIC_ReadInServiceRegister()
+uint16_t i686_PIC_readInServiceRegister()
 {
     i686_outb(PIC1_COMMAND_PORT, PIC_CMD_READ_ISR);
     i686_outb(PIC2_COMMAND_PORT, PIC_CMD_READ_ISR);

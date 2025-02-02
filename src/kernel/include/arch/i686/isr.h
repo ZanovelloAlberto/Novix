@@ -17,7 +17,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 #include <stdint.h>
 
@@ -30,7 +29,7 @@ typedef struct
     uint32_t eip, cs, eflags, esp, ss;                      // pushed automatically by CPU
 } __attribute__((packed)) Registers;
 
-typedef void (*ISRHandler)(Registers* regs);
+typedef void (*ISRHandler) (Registers* regs);
 
-void i686_ISR_Initialize();
-void i686_ISR_RegisterHandler(int interrupt, ISRHandler handler);
+void i686_ISR_initialze();
+void i686_ISR_registerNewHandler(int interrupt, ISRHandler handler);

@@ -17,23 +17,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-#include <hal/hal.h>
 #include <stdio.h>
+#include <hal/hal.h>
 #include <arch/i686/irq.h>
 
 void timer(Registers* regs)
 {
-    printf(".");
+    putc('.');
 }
 
 void __attribute__((section(".entry"))) start(uint16_t bootDrive)
 {
     clr();
 
-    HAL_Initialize();
+    HAL_initialize();
 
-    i686_IRQ_RegisterHandler(0, timer);
+    i686_IRQ_registerNewHandler(0, timer);
+    printf("bootdrive: %d !\n\r", bootDrive);
 
 end:
     for (;;);
