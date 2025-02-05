@@ -22,6 +22,7 @@
 #include <arch/i686/irq.h>
 #include <arch/i686/io.h>
 #include <arch/i686/pic.h>
+#include <arch/i686/pit.h>
 
 #define PIC_REMAP_OFFSET 0x20
 
@@ -52,6 +53,7 @@ void i686_IRQ_handler(Registers* regs)
 void i686_IRQ_initialize()
 {
     i686_PIC_configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
+    i686_PIT_initialize();
 
     printf("initilazing IRQ ...\n\r");
 

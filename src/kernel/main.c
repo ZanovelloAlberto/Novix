@@ -23,12 +23,23 @@
 
 void timer(Registers* regs)
 {
-    putc('.');
+    //putc('.');
 }
+
+const char logo[] = 
+"\
+                 _   _            _      \n\
+                | \\ | | _____   _(_)_  __\n\
+                |  \\| |/ _ \\ \\ / / \\ \\/ /\n\
+                | |\\  | (_) \\ V /| |>  < \n\
+                |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
+";
 
 void __attribute__((section(".entry"))) start(uint16_t bootDrive)
 {
     clr();
+
+    printf("%s", logo);
 
     HAL_initialize();
 

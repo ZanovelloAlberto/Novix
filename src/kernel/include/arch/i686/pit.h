@@ -16,3 +16,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+#pragma once
+#include <stdint.h>
+
+void i686_PIT_initialize();

@@ -16,3 +16,58 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+#include <arch/i686/pit.h>
+#include <arch/i686/io.h>
+#include <stdio.h>
+
+#define COUNTER0_PORT       0X40
+#define COUNTER1_PORT       0X41
+#define COUNTER2_PORT       0X42
+#define CW_PORT             0X43
+
+#define FREQUENCY   100
+
+typedef enum{
+    PIT_ICW_BINARYCODED_DECIMAL = 0X01,
+
+    PIT_ICW_MODE0               = 0X00,
+    PIT_ICW_MODE1               = 0X02,
+    PIT_ICW_MODE2               = 0X04,
+    PIT_ICW_MODE3               = 0X06,
+    PIT_ICW_MODE4               = 0X08,
+    PIT_ICW_MODE5               = 0X0A,
+
+    PIT_ICW_RL_COUNTER_LATCHED  = 0X00, // Counter value is latched into an internal control register at the time of the I/O write operation.
+    PIT_ICW_RL_LSB              = 0X10, // Read or Load Least Significant Byte (LSB) only
+    PIT_ICW_RL_MSB              = 0X20, // Read or Load Most Significant Byte (MSB) only
+    PIT_ICW_RL_LSB_MSB          = 0X30, // Read or Load LSB first then MSB
+
+    PIT_ICW_COUNTER0            = 0X00,
+    PIT_ICW_COUNTER1            = 0X40,
+    PIT_ICW_COUNTER2            = 0X80,
+}PIT_ICW_BYTE;
+
+void i686_PIT_initialize()
+{
+    uint32_t count = 1193180 / FREQUENCY;
+
+    printf("Initializing PIT...\n\r");
+
+    // configuring COUNTER 0 for irq0
+    i686_outb(CW_PORT, PIT_ICW_BINARYCODED_DECIMAL | PIT_ICW_MODE2 | PIT_ICW_RL_LSB_MSB | PIT_ICW_COUNTER0);
+
+    // sending the least significant byte first
+    i686_outb(COUNTER0_PORT, (uint8_t)(count & 0xFF));
+
+    // sending the most significant byte
+    i686_outb(COUNTER0_PORT, (uint8_t)((count >> 8) & 0xFF));
+
+
+    /*
+    * TODO:
+    * configuring COUNTER 2 for PC speaker
+    */
+
+    printf("Done !\n\r");
+}
