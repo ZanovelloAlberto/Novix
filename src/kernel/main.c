@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <hal/hal.h>
 #include <arch/i686/irq.h>
+#include <boot_info.h>
 
 void timer(Registers* regs)
 {
@@ -35,7 +36,7 @@ const char logo[] =
                 |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
 ";
 
-void __attribute__((section(".entry"))) start(uint16_t bootDrive)
+void __attribute__((section(".entry"))) start(Boot_info* info)
 {
     clr();
 
@@ -44,7 +45,14 @@ void __attribute__((section(".entry"))) start(uint16_t bootDrive)
     HAL_initialize();
 
     i686_IRQ_registerNewHandler(0, timer);
-    printf("bootdrive: %d !\n\r", bootDrive);
+
+    printf("bootDrive: %d\n", info->bootDrive);
+    printf("memory size: 0x%lxKb\n", info->memorySize);
+    
+    for(int i = 0; i < info->memoryBlockCount; i++)
+    {
+        printf("base: 0x%llx, length: 0x%llx, type: 0x%x\n", info->memoryBlockEntries[i].base, info->memoryBlockEntries[i].length, info->memoryBlockEntries[i].type);
+    }
 
 end:
     for (;;);

@@ -22,6 +22,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdbool.h>
+#include <boot_info.h>
 
 void __attribute__((cdecl)) x86_outb(uint16_t port, uint8_t value);
 uint8_t __attribute__((cdecl)) x86_inb(uint16_t port);
@@ -40,3 +41,6 @@ bool __attribute__((cdecl)) x86_Disk_Read(uint8_t drive,
                                           uint16_t head,
                                           uint8_t count,
                                           void* lowerDataOut);
+
+uint32_t __attribute__((cdecl)) x86_Get_MemorySize();
+uint16_t __attribute__((cdecl)) x86_Get_MemoryMapEntry(Memory_mapEntry* entry, uint32_t* continuation);

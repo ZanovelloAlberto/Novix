@@ -263,3 +263,134 @@ x86_Disk_Read:
     mov esp, ebp
     pop ebp
     ret
+
+global x86_Get_MemorySize
+x86_Get_MemorySize:
+    ; make new call frame
+    push ebp             ; save old call frame
+    mov ebp, esp          ; initialize new call frame
+
+    ; cdecl convention must save all modified register except eax
+    push ebx
+    push ecx
+    push edx
+
+    x86_EnterRealMode
+
+    xor ecx, ecx    ; very important for the check some bios might use eax and ebx instead of ecx and edx or both
+    xor edx, edx
+
+    mov eax, 0xE801
+    int 15h
+    jc .error
+
+    cmp ah, 0x86 ; unsupported function
+    je .error
+
+    cmp ah, 0x80 ; invalid command
+    je .error
+
+    or ecx, ecx
+    jz .inEAX   ;the bios chooses eax and ebx
+
+    mov eax, edx
+    mov edx, 64
+    mul edx
+
+    add eax, ecx
+
+    ;mov ecx, 1024  ; uncomment if you want an output in Mb
+    ;div ecx
+    ;add eax, 2     ; + size for the 1mb and the sixteen mb
+
+    add eax, 2048
+
+    jmp .done
+    
+.inEAX:
+    xchg eax, ebx
+    mov edx, 64
+    mul edx
+
+    add eax, ebx
+
+    ;mov ecx, 1024  ; uncomment if you want an output in Mb
+    ;div ecx
+    ;add eax, 2     ; + size for the 1mb and the sixteen mb
+
+    add eax, 2048
+
+    jmp .done
+
+.error:
+    mov eax, 0
+
+.done:
+    push eax
+    x86_EnterProtectedMode
+    pop eax
+
+
+    pop edx
+    pop ecx
+    pop ebx
+
+    ; restore old call frame
+    mov esp, ebp
+    pop ebp
+    ret
+
+global x86_Get_MemoryMapEntry
+x86_Get_MemoryMapEntry:
+    ; make new call frame
+    push ebp             ; save old call frame
+    mov ebp, esp          ; initialize new call frame
+
+    push ebx
+    push ecx
+    push edx
+    push ds
+    push es
+    push si
+    push di
+
+    x86_EnterRealMode
+
+    mov eax, 0xe820
+    mov ecx, 20
+    mov edx, 0x534D4150
+
+    LinearToSegOffset [bp+12], ds, esi, si
+    mov ebx, [ds:si]
+
+    LinearToSegOffset [bp+8], es, edi, di
+    int 15h
+    jc .failed
+
+    cmp eax, 0x534D4150
+    jne .failed
+
+    mov [ds:si], ebx
+    jmp .done
+
+
+.failed:
+    mov eax, 0
+
+.done:
+    push eax
+    x86_EnterProtectedMode
+    pop eax
+
+    pop di
+    pop si
+    pop es
+    pop ds
+    pop edx
+    pop ecx
+    pop ebx
+
+; restore old call frame
+    mov esp, ebp
+    pop ebp
+    ret

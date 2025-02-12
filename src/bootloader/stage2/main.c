@@ -23,10 +23,13 @@
 #include "stdio.h"
 #include "disk.h"
 #include "fat.h"
+#include "x86.h"
+#include "memdetect.h"
 
 void* Kernel = (void*)0x100000;
+typedef void (*KernelStart)(Boot_info* info);
 
-typedef void (*KernelStart)(uint16_t bootDrive);
+Boot_info g_info;
 
 void __attribute__((cdecl)) start(uint16_t bootDrive)
 {
@@ -47,9 +50,12 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
 
     FAT_LoadFile(&disk, "/kernel.bin", Kernel);
 
+    memoryDetect(&g_info);
+    g_info.bootDrive = bootDrive;
+
     // execute kernel
     KernelStart kernelStart = (KernelStart)Kernel;
-    kernelStart(bootDrive);
+    kernelStart(&g_info);
 
 end:
     for (;;);
