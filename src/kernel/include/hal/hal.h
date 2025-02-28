@@ -19,5 +19,6 @@
 
 
 #pragma once
+#include <boot_info.h>
 
-void HAL_initialize();
+void HAL_initialize(Boot_info* info);

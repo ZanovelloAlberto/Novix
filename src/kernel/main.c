@@ -38,16 +38,16 @@ const char logo[] =
 
 void __attribute__((section(".entry"))) start(Boot_info* info)
 {
+    i686_IRQ_registerNewHandler(0, timer);
     clr();
 
     printf("%s", logo);
 
-    HAL_initialize();
-
-    i686_IRQ_registerNewHandler(0, timer);
+    HAL_initialize(info);
 
     printf("bootDrive: %d\n", info->bootDrive);
     printf("memory size: 0x%lxKb\n", info->memorySize);
+    printf("count: %d\n\r", info->memoryBlockCount);
     
     for(int i = 0; i < info->memoryBlockCount; i++)
     {

@@ -35,6 +35,11 @@ OBJECTS_C = $(patsubst %.c, $(BUILD_DIR)/kernel/c/%.obj, $(SOURCES_C))
 
 OBJECTS_ASM = $(patsubst %.asm, $(BUILD_DIR)/kernel/asm/%.obj, $(SOURCES_ASM))
 
+LIB_OBJECT =	$(wildcard $(BUILD_DIR)/lib/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*/*/*.obj) \
+
 kernel: isr_generator $(BUILD_DIR)/kernel.bin
 
 isr_generator: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc
@@ -43,7 +48,7 @@ isr_generator: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc
 	@echo "--> Generating: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc"
 
 $(BUILD_DIR)/kernel.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	@$(LD) $(LDFLAG) -o $@ $^ -lgcc
+	@$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc
 	@echo "--> Created:  kernel.bin"
 
 $(BUILD_DIR)/kernel/c/%.obj: %.c $(HEADERS_C)

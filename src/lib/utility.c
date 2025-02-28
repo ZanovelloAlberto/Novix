@@ -17,29 +17,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#define MAX_MEMORY_ENTRY 256
-#include "x86.h"
-#include "memdefs.h"
+#include "utility.h"
 
-Memory_mapEntry* g_memoryBlockEntries = MEMORY_MAP_ADDR;
-
-void memoryDetect(Boot_info* info)
+uint64_t roundUp_div(uint64_t dividend, uint64_t divisor)
 {
-    Memory_mapEntry memoryBlockEntry;
-
-    uint32_t continuation = 0;
-    uint32_t memoryBlockCount = 0;
-    uint16_t ret = 0;
-
-    info->memorySize = x86_Get_MemorySize();
-
-    do
-    {
-        ret = x86_Get_MemoryMapEntry(&memoryBlockEntry, &continuation);
-        g_memoryBlockEntries[memoryBlockCount] = memoryBlockEntry;
-        memoryBlockCount++;
-    }while(ret != 0 && continuation != 0 );
-
-    info->memoryBlockCount = memoryBlockCount;
-    info->memoryBlockEntries = g_memoryBlockEntries;
+	return (dividend % divisor) ?  (dividend / divisor) + 1 : (dividend / divisor);
 }

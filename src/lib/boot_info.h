@@ -27,6 +27,13 @@ typedef struct{
     uint16_t acpi;
 }Memory_mapEntry;
 
+typedef enum{
+	AVAILABLE 	= 1,
+	RESERVED 	= 2,
+	ACPI 		= 3,
+	ACPI_NVS 	= 4,
+}MEMORY_TYPE;
+
 typedef struct{
     uint16_t bootDrive;
     uint32_t memorySize;

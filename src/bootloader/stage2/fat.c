@@ -19,13 +19,11 @@
 
 #include "fat.h"
 #include "stdio.h"
-#include "memory.h"
+#include <memory.h>
 #include "string.h"
 #include "ctype.h"
 
-#define MEMORY_FAT_ADDR     ((void*)0x20000)
-#define MEMORY_ROOTDIR_ADDR     ((void*)0x23000)
-#define MEMORY_FATBUFFER_ADDR     ((void*)0x26000)
+#include "memdefs.h"
 
 #define MAX_PATH_SIZE           256
 

@@ -1,4 +1,4 @@
-BUILD_DIR?=build/
+BUILD_DIR?=build
 LIB_DIR = ../../lib
 ASM=nasm
 ASMFLAGS= -f elf
@@ -14,12 +14,17 @@ SOURCES_ASM=$(wildcard *.asm)
 OBJECTS_C=$(patsubst %.c, $(BUILD_DIR)/bootloader/c/%.obj, $(SOURCES_C))
 OBJECTS_ASM=$(patsubst %.asm, $(BUILD_DIR)/bootloader/asm/%.obj, $(SOURCES_ASM))
 
+LIB_OBJECT =	$(wildcard $(BUILD_DIR)/lib/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*/*.obj) \
+			$(wildcard $(BUILD_DIR)/lib/*/*/*/*.obj) \
+
 stage2: $(BUILD_DIR)/boot0.bin
 
 $(BUILD_DIR)/boot0.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	@mkdir -p $(@D)
-	@$(LD) $(LDFLAG) -o $@ $^ -lgcc
-	@echo "--> Created:  boot0.bin"
+	mkdir -p $(@D)
+	$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc
+	echo "--> Created:  boot0.bin"
 
 $(BUILD_DIR)/bootloader/c/%.obj: %.c
 	@mkdir -p $(@D)
