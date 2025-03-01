@@ -54,7 +54,7 @@ int i686_mmnger_initData(Boot_info* info)
     // here we are trying to find a free block of memory for the bitmap
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
-        if(info->memoryBlockEntries[i].type == AVAILABLE)
+        if(info->memoryBlockEntries[i].type == AVAILABLE && info->memoryBlockEntries[i].length >= bitmapSize)
         {
             base = info->memoryBlockEntries[i].base;
             goto Founded;
