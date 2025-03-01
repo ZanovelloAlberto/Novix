@@ -30,5 +30,5 @@ void HAL_initialize(Boot_info* info)
     i686_IDT_initilize();
     i686_ISR_initialze();
     i686_IRQ_initialize();
-    mmnger_initialize(info);
+    i686_mmnger_initialize(info);
 }

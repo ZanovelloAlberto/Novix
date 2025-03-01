@@ -18,6 +18,7 @@
 */
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <arch/i686/physMemory_manager.h>
 #include <memory.h>
@@ -32,19 +33,25 @@ typedef enum{
     USED_BLOCK,
 }BITMAP_VALUE;
 
+// memory map but in 4kb size
 Memory_mapEntry g_memory4KbEntries[MAX_MEMORY_ENTRY];
 
+// useful data for our memory manager
 uint8_t* bitmap;
 uint32_t totalBlockNumber;
+uint32_t totalFreeBlock;
+uint32_t totalUsedBlock;
 uint32_t bitmapSize;
 
-int mmnger_initData(Boot_info* info)
+// this function initialize some of the useful data of the memory manager
+int i686_mmnger_initData(Boot_info* info)
 {
     uint32_t base;
 
     totalBlockNumber = roundUp_div(info->memorySize, BLOCK_SIZEKB);
     bitmapSize = roundUp_div(totalBlockNumber, BLOCK_PER_BYTE);
 
+    // here we are trying to find a free block of memory for the bitmap
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
         if(info->memoryBlockEntries[i].type == AVAILABLE)
@@ -58,17 +65,24 @@ int mmnger_initData(Boot_info* info)
 
 Founded:
     bitmap = (uint8_t*)base;
+
+    // we need to add a new reserved region to our memory map 
     info->memoryBlockEntries[info->memoryBlockCount].base = base;
     info->memoryBlockEntries[info->memoryBlockCount].length = bitmapSize;
     info->memoryBlockEntries[info->memoryBlockCount].type = RESERVED;
 
     info->memoryBlockCount++;
 
+    // the memory map to the 4kb size array
+    memcpy(&g_memory4KbEntries, info->memoryBlockEntries, MAX_MEMORY_ENTRY);
+
+    // initialy we mark the whole memory as used
     memset(bitmap, USED_BLOCK, bitmapSize);
 
     return 1;
 }
 
+// this convert the memory map entry to 4kb size
 void memoryMap_toBlock(uint32_t memoryBlockCount)
 {
 	for(int i = 0; i < memoryBlockCount; i++)
@@ -99,21 +113,43 @@ uint8_t test_ifUsedBlock(int block)
     return bitmap[block / 8] & (1 << block % 8);
 }
 
-void mmnger_initialize(Boot_info* info)
+uint32_t bitmap_FirstFreeBlock()
+{
+    uint8_t byte;
+
+    for(int i = 0; i < totalBlockNumber; i++)
+        if(!test_ifUsedBlock(i))
+            return i;
+
+    return -1;
+}
+
+void i686_mmnger_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut)
+{
+    *bitmapSizeOut = bitmapSize;
+    *totalBlockNumberOut = totalBlockNumber;
+    *totalUsedBlockOut = totalUsedBlock;
+    *totalFreeBlockOut = totalFreeBlock;
+}
+
+void i686_mmnger_initialize(Boot_info* info)
 {
     uint32_t block;
 
     printf("initializing physical memory manager...\n\r");
-    if(mmnger_initData(info) == 0)
+    if(i686_mmnger_initData(info) == 0)
     {
         printf("Physical Memory manager initialize failed !\n\r");
         return;
     }
 
-    memcpy(&g_memory4KbEntries, info->memoryBlockEntries, MAX_MEMORY_ENTRY);
-
     memoryMap_toBlock(info->memoryBlockCount);
 
+    /*
+    * for the sake of ...
+    * we need to first mark the availabe memory then the reserved ones
+    * this prevent things like overlaping memory block
+    */
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
         if(g_memory4KbEntries[i].type == AVAILABLE)
@@ -138,16 +174,35 @@ void mmnger_initialize(Boot_info* info)
         }
     }
 
+    for(int i = 0; i < totalBlockNumber; i++)
+    {
+        if(test_ifUsedBlock(i))
+            totalUsedBlock++;
+        else
+            totalFreeBlock++;
+    }
+
     printf("Done !\n\r");
 }
 
-uint32_t bitmap_FirstFreeBlock()
+void* i686_physMemoryAllocBlock()
 {
-    uint8_t byte;
+    uint32_t block = bitmap_FirstFreeBlock();
 
-    for(int i = 0; i < totalBlockNumber; i++)
-        if(!test_ifUsedBlock(i))
-            return i;
+    if(block == -1)
+        return NULL;
+    bitmap_SetBlockToUsed(block);
+    totalUsedBlock++;
+    totalFreeBlock--;
 
-    return -1;
+    return (void*)(block * BLOCK_SIZEKB * 0x400);
+}
+
+void i686_physMemoryfreeBlock(void* ptr)
+{
+    uint32_t block = (uint32_t)ptr / (BLOCK_SIZEKB * 0x400);
+
+    void bitmap_SetBlockToFree(int block);
+    totalUsedBlock--;
+    totalFreeBlock++;
 }

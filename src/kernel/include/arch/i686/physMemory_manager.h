@@ -20,5 +20,7 @@
 #pragma once
 #include <boot_info.h>
 
-void mmnger_initialize(Boot_info* info);
-uint32_t bitmap_FirstFreeBlock();
+void i686_mmnger_initialize(Boot_info* info);
+void i686_physMemoryfreeBlock(void* ptr);
+void* i686_physMemoryAllocBlock();
+void i686_mmnger_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut);

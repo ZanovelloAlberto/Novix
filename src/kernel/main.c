@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <hal/hal.h>
 #include <arch/i686/irq.h>
+#include <arch/i686/physMemory_manager.h>
 #include <boot_info.h>
 
 void timer(Registers* regs)
@@ -53,6 +54,29 @@ void __attribute__((section(".entry"))) start(Boot_info* info)
     {
         printf("base: 0x%llx, length: 0x%llx, type: 0x%x\n", info->memoryBlockEntries[i].base, info->memoryBlockEntries[i].length, info->memoryBlockEntries[i].type);
     }
+
+    uint32_t totalBlockNumber;
+    uint32_t totalFreeBlock;
+    uint32_t totalUsedBlock;
+    uint32_t bitmapSize;
+
+    i686_mmnger_getMemoryInfo(&bitmapSize, &totalBlockNumber, &totalFreeBlock, &totalUsedBlock);
+
+    printf("bitmap Size: %d, total Block Number: %d, total Free Block: %d, total Used Block: %d\n\r", bitmapSize, totalBlockNumber, totalFreeBlock, totalUsedBlock);
+
+    void* ptr = i686_physMemoryAllocBlock();
+    printf("ptr allocated at: 0x%x\n\r", ptr);
+
+    i686_mmnger_getMemoryInfo(&bitmapSize, &totalBlockNumber, &totalFreeBlock, &totalUsedBlock);
+
+    printf("bitmap Size: %d, total Block Number: %d, total Free Block: %d, total Used Block: %d\n\r", bitmapSize, totalBlockNumber, totalFreeBlock, totalUsedBlock);
+
+    printf("freeing ptr\n\r");
+    i686_physMemoryfreeBlock(ptr);
+
+    i686_mmnger_getMemoryInfo(&bitmapSize, &totalBlockNumber, &totalFreeBlock, &totalUsedBlock);
+
+    printf("bitmap Size: %d, total Block Number: %d, total Free Block: %d, total Used Block: %d\n\r", bitmapSize, totalBlockNumber, totalFreeBlock, totalUsedBlock);
 
 end:
     for (;;);
