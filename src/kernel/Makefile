@@ -48,7 +48,7 @@ isr_generator: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc
 	@echo "--> Generating: arch/i686/isrs_gen.c arch/i686/isrs_gen.inc"
 
 $(BUILD_DIR)/kernel.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	@$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc
+	@$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc -Map $(BUILD_DIR)/kernel.map
 	@echo "--> Created:  kernel.bin"
 
 $(BUILD_DIR)/kernel/c/%.obj: %.c $(HEADERS_C)

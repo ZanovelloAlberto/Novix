@@ -37,7 +37,7 @@ const char logo[] =
                 |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
 ";
 
-void __attribute__((section(".entry"))) start(Boot_info* info)
+void __attribute__((cdecl)) start(Boot_info* info)
 {
     i686_IRQ_registerNewHandler(0, timer);
     clr();

@@ -1,4 +1,4 @@
-ENTRY(start)
+ENTRY(entry)
 OUTPUT_FORMAT("binary")
 phys = 0x00100000;
 
@@ -11,6 +11,7 @@ SECTIONS
     .data               : { __data_start = .;       *(.data)    }
     .rodata             : { __rodata_start = .;     *(.rodata)  }
     .bss                : { __bss_start = .;        *(.bss)     }
+    .stack              : { __stack_start = .;      *(.stack)   }
     
     __end = .;
 }

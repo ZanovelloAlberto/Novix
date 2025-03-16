@@ -57,13 +57,13 @@ int i686_mmnger_initData(Boot_info* info)
         if(info->memoryBlockEntries[i].type == AVAILABLE && info->memoryBlockEntries[i].length >= bitmapSize)
         {
             base = info->memoryBlockEntries[i].base;
-            goto Founded;
+            goto Found;
         }
     }
 
     return 0;
 
-Founded:
+Found:
     bitmap = (uint8_t*)base;
 
     // we need to add a new reserved region to our memory map 

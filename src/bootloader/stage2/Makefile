@@ -23,7 +23,7 @@ stage2: $(BUILD_DIR)/boot0.bin
 
 $(BUILD_DIR)/boot0.bin: $(OBJECTS_ASM) $(OBJECTS_C)
 	mkdir -p $(@D)
-	$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc
+	$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc -Map $(BUILD_DIR)/boot0.map
 	echo "--> Created:  boot0.bin"
 
 $(BUILD_DIR)/bootloader/c/%.obj: %.c

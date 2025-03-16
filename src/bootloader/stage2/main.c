@@ -28,7 +28,7 @@
 #include "memdetect.h"
 
 void* Kernel = (void*)0x100000;
-typedef void (*KernelStart)(Boot_info* info);
+typedef void __attribute__((cdecl)) (*KernelStart)(Boot_info* info);
 
 Boot_info* g_info = MEMORY_BOOTINFO_ADDR;
 
