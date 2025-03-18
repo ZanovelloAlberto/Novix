@@ -301,9 +301,9 @@ x86_Get_MemorySize:
 
     ;mov ecx, 1024  ; uncomment if you want an output in Mb
     ;div ecx
-    ;add eax, 2     ; + size for the 1mb and the sixteen mb
+    ;add eax, 1     ; the routine doesnt add the KB between 0-1MB; add it
 
-    add eax, 2048
+    add eax, 1024
 
     jmp .done
     
@@ -316,9 +316,9 @@ x86_Get_MemorySize:
 
     ;mov ecx, 1024  ; uncomment if you want an output in Mb
     ;div ecx
-    ;add eax, 2     ; + size for the 1mb and the sixteen mb
+    ;add eax, 1     ; the routine doesnt add the KB between 0-1MB; add it
 
-    add eax, 2048
+    add eax, 1024
 
     jmp .done
 
