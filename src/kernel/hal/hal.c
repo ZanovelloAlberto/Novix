@@ -23,6 +23,7 @@
 #include <arch/i686/isr.h>
 #include <arch/i686/irq.h>
 #include <arch/i686/physMemory_manager.h>
+#include <arch/i686/virtMemory_manager.h>
 
 void HAL_initialize(Boot_info* info)
 {
@@ -30,5 +31,6 @@ void HAL_initialize(Boot_info* info)
     i686_IDT_initilize();
     i686_ISR_initialze();
     i686_IRQ_initialize();
-    i686_mmnger_initialize(info);
+    i686_physMmnger_initialize(info);
+    i686_virtMmnger_initialize();
 }

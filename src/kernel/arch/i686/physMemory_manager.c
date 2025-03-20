@@ -132,7 +132,7 @@ void i686_mmnger_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumb
     *totalFreeBlockOut = totalFreeBlock;
 }
 
-void i686_mmnger_initialize(Boot_info* info)
+void i686_physMmnger_initialize(Boot_info* info)
 {
     uint32_t block;
 
@@ -200,6 +200,9 @@ void* i686_physMemoryAllocBlock()
 
 void i686_physMemoryfreeBlock(void* ptr)
 {
+    if(!ptr)
+        return;
+
     uint32_t block = (uint32_t)ptr / (BLOCK_SIZEKB * 0x400);
 
     void bitmap_SetBlockToFree(int block);

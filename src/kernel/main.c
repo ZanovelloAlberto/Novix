@@ -21,6 +21,7 @@
 #include <hal/hal.h>
 #include <arch/i686/irq.h>
 #include <arch/i686/physMemory_manager.h>
+#include <arch/i686/virtMemory_manager.h>
 #include <boot_info.h>
 
 void timer(Registers* regs)
@@ -77,6 +78,10 @@ void __attribute__((cdecl)) start(Boot_info* info)
     i686_mmnger_getMemoryInfo(&bitmapSize, &totalBlockNumber, &totalFreeBlock, &totalUsedBlock);
 
     printf("bitmap Size: %d, total Block Number: %d, total Free Block: %d, total Used Block: %d\n\r", bitmapSize, totalBlockNumber, totalFreeBlock, totalUsedBlock);
+
+    //i686_virtMmnger_mapPage ((void*)0xa0000000);
+    uint32_t* testmanager = (uint32_t*) 0xa0000000;
+    *testmanager = 19; // will cause a page fault unless you uncomment out i686_virtMmnger_mapPage ((void*)0xa0000000);
 
 end:
     for (;;);

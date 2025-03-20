@@ -17,10 +17,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include <boot_info.h>
 
-void i686_physMmnger_initialize(Boot_info* info);
-void i686_physMemoryfreeBlock(void* ptr);
-void* i686_physMemoryAllocBlock();
-void i686_mmnger_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut);
+#pragma once
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef uint32_t PDE;
+typedef uint32_t PTE;
+
+void i686_virtMmnger_initialize();
+void i686_virtMmnger_mapPage (void* virt);
+void i686_virtMmnger_freePage(PTE* entry);
+int i686_virtMmnger_allocPage(PTE* entry, uint32_t flags);
