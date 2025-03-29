@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <arch/i686/isr.h>
-#include <arch/i686/io.h>
+#include <hal/isr.h>
+#include <hal/io.h>
 #include <stdio.h>
 #include <stddef.h>
 

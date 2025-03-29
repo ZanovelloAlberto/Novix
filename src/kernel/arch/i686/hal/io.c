@@ -18,7 +18,7 @@
 */
 
 
-#include <arch/i686/io.h>
+#include <hal/io.h>
 
 #define UNUSED_PORT         0x80
 

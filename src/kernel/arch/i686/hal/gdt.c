@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <arch/i686/gdt.h>
+#include <hal/gdt.h>
 #include <stdio.h>
 
 Gdt_entry g_GDT[] = {

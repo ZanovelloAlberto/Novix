@@ -1,11 +1,14 @@
 BUILD_DIR?=build
-LIB_DIR = ../../lib
-ASM=nasm
+LIB_DIR?=lib
+
+ASM?=nasm
 ASMFLAGS= -f elf
-CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
-CFLAG=-ffreestanding -nostdlib -std=c99 -g -I $(abspath $(LIB_DIR))
-LD?=/home/novice/cross/i686-elf/bin/i686-elf-ld
+
 LIBGCC_PATH?=/home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
+CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
+CFLAG=-ffreestanding -nostdlib -std=c99 -g -I $(LIB_DIR)
+
+LD?=/home/novice/cross/i686-elf/bin/i686-elf-ld
 LDFLAG=-T linker.ld -nostdlib -L $(LIBGCC_PATH)
 
 
@@ -22,9 +25,9 @@ LIB_OBJECT =	$(wildcard $(BUILD_DIR)/lib/*.obj) \
 stage2: $(BUILD_DIR)/boot0.bin
 
 $(BUILD_DIR)/boot0.bin: $(OBJECTS_ASM) $(OBJECTS_C)
-	mkdir -p $(@D)
-	$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc -Map $(BUILD_DIR)/boot0.map
-	echo "--> Created:  boot0.bin"
+	@mkdir -p $(@D)
+	@$(LD) $(LDFLAG) -o $@ $^ $(LIB_OBJECT) -lgcc -Map $(BUILD_DIR)/boot0.map
+	@echo "--> Created:  boot0.bin"
 
 $(BUILD_DIR)/bootloader/c/%.obj: %.c
 	@mkdir -p $(@D)

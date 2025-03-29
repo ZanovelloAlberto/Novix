@@ -2,13 +2,20 @@ BUILD_DIR=build
 SRC_DIR=src
 FAT=mkfs.fat
 ASM=nasm
-ASMFLAGS= -f elf
 CC=/home/novice/cross/i686-elf/bin/i686-elf-gcc
-CFLAG=-ffreestanding -nostdlib -std=c99 -g
 LD=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LDFLAG=-T linker.ld -nostdlib
 LIBGCC_PATH= /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
+LIB_DIR=$(abspath $(SRC_DIR)/lib/)
 
+export FAT
+export ASM
+export CC
+export LD
+export LIBGCC_PATH
+export LIB_DIR
+
+#invalid architecture
+ARCH = arch/
 
 #
 # Floppy image
@@ -23,13 +30,16 @@ $(BUILD_DIR)/main.img: lib bootloader kernel
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/boot0.bin "::boot0.bin"
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
 
+i686: ARCH = arch/i686
+i686: floppy_image
+
 
 #
 # lib
 #
 
 lib:
-	$(MAKE) -C $(SRC_DIR)/lib/ BUILD_DIR=$(abspath $(BUILD_DIR)) LD=$(LD) CC=$(CC) LIBGCC_PATH=$(LIBGCC_PATH)
+	$(MAKE) -C $(LIB_DIR) BUILD_DIR=$(abspath $(BUILD_DIR))
 
 #
 # Bootloader
@@ -38,23 +48,13 @@ lib:
 bootloader: stage1 stage2
 
 stage1:
-	$(MAKE) -C $(SRC_DIR)/bootloader/stage1 BUILD_DIR=$(abspath $(BUILD_DIR))
+	$(MAKE) -C $(SRC_DIR)/bootloader/$(ARCH)/stage1/ BUILD_DIR=$(abspath $(BUILD_DIR))
 
 stage2:
-	$(MAKE) -C $(SRC_DIR)/bootloader/stage2 BUILD_DIR=$(abspath $(BUILD_DIR)) LD=$(LD) CC=$(CC) LIBGCC_PATH=$(LIBGCC_PATH)
+	$(MAKE) -C $(SRC_DIR)/bootloader/$(ARCH)/stage2/ BUILD_DIR=$(abspath $(BUILD_DIR))
 
 kernel:
-	$(MAKE) -C $(SRC_DIR)/kernel/ BUILD_DIR=$(abspath $(BUILD_DIR)) LD=$(LD) CC=$(CC) LIBGCC_PATH=$(LIBGCC_PATH)
-
-#
-# For Novice on windows Cygwin
-#
-
-cygwin: CC =  /home/Novice/opt/cross/bin/i686-elf-gcc.exe
-cygwin: LD = /home/Novice/opt/cross/bin/i686-elf-ld.exe
-cygwin: FAT=/usr/local/sbin/mkfs.fat.exe
-cygwin: LIBGCC_PATH=/home/novice/opt/cross/lib/gcc/i686-elf/14.2.0
-cygwin: floppy_image
+	$(MAKE) -C $(SRC_DIR)/kernel/$(ARCH) BUILD_DIR=$(abspath $(BUILD_DIR))
 
 clean:
 	rm -rf build/*

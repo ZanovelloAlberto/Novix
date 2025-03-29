@@ -18,8 +18,8 @@
 */
 
 
-#include <arch/i686/io.h>
-#include <arch/i686/pic.h>
+#include <hal/io.h>
+#include <hal/pic.h>
 #include <stdio.h>
 
 #define PIC1_COMMAND_PORT           0x20

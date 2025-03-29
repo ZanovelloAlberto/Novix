@@ -17,8 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <arch/i686/pit.h>
-#include <arch/i686/io.h>
+#include <hal/pit.h>
+#include <hal/io.h>
 #include <stdio.h>
 
 #define COUNTER0_PORT       0X40

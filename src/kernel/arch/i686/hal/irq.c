@@ -19,10 +19,10 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <arch/i686/irq.h>
-#include <arch/i686/io.h>
-#include <arch/i686/pic.h>
-#include <arch/i686/pit.h>
+#include <hal/irq.h>
+#include <hal/io.h>
+#include <hal/pic.h>
+#include <hal/pit.h>
 
 #define PIC_REMAP_OFFSET 0x20
 

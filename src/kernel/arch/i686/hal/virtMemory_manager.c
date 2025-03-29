@@ -20,9 +20,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <arch/i686/memory_manager.h>
-#include <arch/i686/physMemory_manager.h>
-#include <arch/i686/virtMemory_manager.h>
+#include <hal/memory_manager.h>
+#include <hal/physMemory_manager.h>
+#include <hal/virtMemory_manager.h>
 #include <memory.h>
 
 #define PAGE_ADD_ATTRIBUTE(page_entry, flags)     page_entry | flags

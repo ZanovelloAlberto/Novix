@@ -17,19 +17,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include <stdint.h>
+#include <hal/idt.h>
+#include <stdio.h>
 
-#define COLOR8_BLACK 0
-#define COLOR8_LIGHT_GREY 7
+Idt_gate g_IDT[256];
+Idt_descriptor g_IDTdescriptor = {sizeof(g_IDT) - 1, g_IDT};
 
-#define WIDTH 80
-#define HEIGHT 25
+void __attribute__((cdecl)) i686_IDT_flush(Idt_descriptor* descriptor);
 
-void puts(const char* s);
-void putc(const char s);
-void printf(const char* fmt, ...);
-void scrollUp();
-void newLine();
-void clr();
-void updateCursor();
+void i686_IDT_setGate(int interrupt, void* offset, uint8_t attribute)
+{
+    g_IDT[interrupt].offset_low     = (uint32_t)offset & 0XFFFF;
+    g_IDT[interrupt].segment        = 0X08;
+    g_IDT[interrupt].reserved       = 0;
+    g_IDT[interrupt].attribute      = attribute;
+    g_IDT[interrupt].offset_high    = ((uint32_t)offset >> 16) & 0xFFFF;
+}
+
+void i686_IDT_initilize()
+{
+    printf("Initializing the IDT...\n\r");
+    i686_IDT_flush(&g_IDTdescriptor);
+    printf("Done !\n\r");
+}

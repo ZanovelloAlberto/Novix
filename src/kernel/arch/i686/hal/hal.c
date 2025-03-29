@@ -18,12 +18,12 @@
 */
 
 #include <hal/hal.h>
-#include <arch/i686/gdt.h>
-#include <arch/i686/idt.h>
-#include <arch/i686/isr.h>
-#include <arch/i686/irq.h>
-#include <arch/i686/physMemory_manager.h>
-#include <arch/i686/virtMemory_manager.h>
+#include <hal/gdt.h>
+#include <hal/idt.h>
+#include <hal/isr.h>
+#include <hal/irq.h>
+#include <hal/physMemory_manager.h>
+#include <hal/virtMemory_manager.h>
 
 void HAL_initialize(Boot_info* info)
 {

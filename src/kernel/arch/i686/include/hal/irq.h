@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <arch/i686/isr.h>
+#include <hal/isr.h>
 
 typedef void (*IRQHandler) (Registers* regs);
 

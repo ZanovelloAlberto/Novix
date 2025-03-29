@@ -19,7 +19,8 @@
 
 
 #include <stdio.h>
-#include <arch/i686/io.h>
+#include <hal/io.h>
+#include <drivers/keyboard.h>
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -41,6 +42,26 @@ void updateCursor(){
 
     i686_outb(0x3d4, 15); //15 tells the framebuffer to expect the lowest 8 bits of the position
     i686_outb(0x3d5, (uint8_t) index & 0x00ff);
+}
+
+char getchar()
+{
+
+	KEYCODE key = NULL_KEY;
+    char ascii = NULL_KEY;
+
+	// wait for a char keypress
+	while (key == NULL_KEY || ascii == NULL_KEY)
+    {
+		key = i686_keyboard_getLastKey();
+        ascii = i686_keyboard_scanToAscii(key);
+    }
+
+    //printf("0x%x", key);
+
+	// discard last keypress (we handled it) and return
+	i686_keyboard_discardLastKey();
+	return ascii;
 }
 
 /** clr:

@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <arch/i686/physMemory_manager.h>
+#include <hal/physMemory_manager.h>
 #include <memory.h>
 #include <utility.h>
 
@@ -152,7 +152,7 @@ void i686_physMmnger_initialize(Boot_info* info)
     */
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
-        if(g_memory4KbEntries[i].type == AVAILABLE)
+        if(g_memory4KbEntries[i].type == AVAILABLE && info->memoryBlockEntries[i].base < info->memorySize)
         {
             for(int j = 0; j <= g_memory4KbEntries[i].length; j++)
             {
@@ -164,7 +164,7 @@ void i686_physMmnger_initialize(Boot_info* info)
 
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
-        if(g_memory4KbEntries[i].type != AVAILABLE)
+        if(g_memory4KbEntries[i].type != AVAILABLE && info->memoryBlockEntries[i].base < info->memorySize)
         {
             for(int j = 0; j <= g_memory4KbEntries[i].length; j++)
             {
