@@ -22,6 +22,7 @@
 #include <hal/irq.h>
 #include <hal/physMemory_manager.h>
 #include <hal/virtMemory_manager.h>
+#include <drivers/fdc.h>
 #include <drivers/keyboard.h>
 #include <boot_info.h>
 
@@ -47,6 +48,7 @@ void __attribute__((cdecl)) start(Boot_info* info)
     printf("%s", logo);
 
     HAL_initialize(info);
+    i686_fdcInitialize();
     i686_keyboard_initialize();
 
     char c;

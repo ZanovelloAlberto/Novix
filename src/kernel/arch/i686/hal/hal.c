@@ -24,6 +24,7 @@
 #include <hal/irq.h>
 #include <hal/physMemory_manager.h>
 #include <hal/virtMemory_manager.h>
+#include <hal/dma.h>
 
 void HAL_initialize(Boot_info* info)
 {
@@ -33,4 +34,5 @@ void HAL_initialize(Boot_info* info)
     i686_IRQ_initialize();
     i686_physMmnger_initialize(info);
     i686_virtMmnger_initialize();
+    i686_dmaEnable();
 }

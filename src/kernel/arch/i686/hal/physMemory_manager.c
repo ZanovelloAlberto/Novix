@@ -18,6 +18,7 @@
 */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <hal/physMemory_manager.h>
@@ -38,9 +39,9 @@ Memory_mapEntry g_memory4KbEntries[MAX_MEMORY_ENTRY];
 
 // useful data for our memory manager
 uint8_t* bitmap;
-uint32_t totalBlockNumber;
-uint32_t totalFreeBlock;
-uint32_t totalUsedBlock;
+uint32_t totalBlockNumber   = 0;
+uint32_t totalFreeBlock     = 0;
+uint32_t totalUsedBlock     = 0;
 uint32_t bitmapSize;
 
 // this function initialize some of the useful data of the memory manager
@@ -77,7 +78,7 @@ Found:
     memcpy(&g_memory4KbEntries, info->memoryBlockEntries, MAX_MEMORY_ENTRY);
 
     // initialy we mark the whole memory as used
-    memset(bitmap, USED_BLOCK, bitmapSize);
+    memset(bitmap, 0b11111111, bitmapSize);
 
     return 1;
 }
@@ -98,9 +99,9 @@ void memoryMap_toBlock(uint32_t memoryBlockCount)
 	}
 }
 
-void bitmap_SetBlockToFree(int block)
+void bitmap_SetBlockToFree(uint32_t block)
 {
-    bitmap[block / 8] &= ~(1 << block % 8);
+    bitmap[block / 8] ^= (1 << block % 8);
 }
 
 void bitmap_SetBlockToUsed(int block)
@@ -108,17 +109,24 @@ void bitmap_SetBlockToUsed(int block)
     bitmap[block / 8] |= (1 << block % 8);
 }
 
-uint8_t test_ifUsedBlock(int block)
+uint8_t check_ifUsedBlock(int block)
 {
     return bitmap[block / 8] & (1 << block % 8);
 }
 
 uint32_t bitmap_FirstFreeBlock()
 {
-    uint8_t byte;
-
     for(int i = 0; i < totalBlockNumber; i++)
-        if(!test_ifUsedBlock(i))
+        if(check_ifUsedBlock(i) == 0)
+            return i;
+
+    return -1;
+}
+
+uint32_t bitmap_FirstFreeBlockFrom(uint32_t position)
+{
+    for(int i = position; i < totalBlockNumber; i++)
+        if(check_ifUsedBlock(i) == 0)
             return i;
 
     return -1;
@@ -150,11 +158,12 @@ void i686_physMmnger_initialize(Boot_info* info)
     * we need to first mark the availabe memory then the reserved ones
     * this prevent things like overlaping memory block
     */
+
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
-        if(g_memory4KbEntries[i].type == AVAILABLE && info->memoryBlockEntries[i].base < info->memorySize)
+        if(g_memory4KbEntries[i].type == AVAILABLE)
         {
-            for(int j = 0; j <= g_memory4KbEntries[i].length; j++)
+            for(int j = 0; j < g_memory4KbEntries[i].length; j++)
             {
                 block = g_memory4KbEntries[i].base + j;
                 bitmap_SetBlockToFree(block);
@@ -164,9 +173,9 @@ void i686_physMmnger_initialize(Boot_info* info)
 
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
-        if(g_memory4KbEntries[i].type != AVAILABLE && info->memoryBlockEntries[i].base < info->memorySize)
+        if(g_memory4KbEntries[i].type != AVAILABLE)
         {
-            for(int j = 0; j <= g_memory4KbEntries[i].length; j++)
+            for(int j = 0; j < g_memory4KbEntries[i].length; j++)
             {
                 block = g_memory4KbEntries[i].base + j;
                 bitmap_SetBlockToUsed(block);
@@ -176,10 +185,10 @@ void i686_physMmnger_initialize(Boot_info* info)
 
     for(int i = 0; i < totalBlockNumber; i++)
     {
-        if(test_ifUsedBlock(i))
-            totalUsedBlock++;
-        else
+        if(check_ifUsedBlock(i) == 0)
             totalFreeBlock++;
+        else
+            totalUsedBlock++;
     }
 
     printf("Done !\n\r");
@@ -198,6 +207,51 @@ void* i686_physMemoryAllocBlock()
     return (void*)(block * BLOCK_SIZEKB * 0x400);
 }
 
+void* i686_physMemoryAllocBlocks(uint8_t block_size)
+{
+    uint32_t index;
+    uint32_t block_addr;
+    uint8_t count;
+
+    uint16_t debug = 0;
+
+    if(block_size > totalFreeBlock)
+        return NULL;
+    
+    index = bitmap_FirstFreeBlock();
+    block_addr = index;
+    count = 1; // we already have one block
+
+    while (index < totalBlockNumber)
+    {
+        if(count >= block_size)
+        {
+            for(int i = 0; i < count; i++)
+            {
+                bitmap_SetBlockToUsed(block_addr + i);
+                totalUsedBlock++;
+                totalFreeBlock--;
+            }
+            
+            return (void*)(block_addr * BLOCK_SIZEKB * 0x400);
+        }
+
+        index++;
+        if(check_ifUsedBlock(index))
+        {
+            debug++;
+            count = 1;
+            index = bitmap_FirstFreeBlockFrom(index);
+            block_addr = index;
+        }
+
+        count++;
+    }
+    
+    printf("debug: %d, count: %d, index: %d\n", debug, count, index);
+    return NULL;
+}
+
 void i686_physMemoryfreeBlock(void* ptr)
 {
     if(!ptr)
@@ -205,7 +259,22 @@ void i686_physMemoryfreeBlock(void* ptr)
 
     uint32_t block = (uint32_t)ptr / (BLOCK_SIZEKB * 0x400);
 
-    void bitmap_SetBlockToFree(int block);
+    bitmap_SetBlockToFree(block);
     totalUsedBlock--;
     totalFreeBlock++;
+}
+
+void i686_physMemoryfreeBlocks(void* ptr, uint8_t size)
+{
+    if(!ptr)
+        return;
+
+    uint32_t block = (uint32_t)ptr / (BLOCK_SIZEKB * 0x400);
+
+    for(int i = 0; i < size; i++)
+    {
+        bitmap_SetBlockToFree(block + i);
+        totalUsedBlock--;
+        totalFreeBlock++;
+    }
 }

@@ -19,8 +19,12 @@
 
 #pragma once
 #include <boot_info.h>
+#include <stdbool.h>
 
 void i686_physMmnger_initialize(Boot_info* info);
 void i686_physMemoryfreeBlock(void* ptr);
 void* i686_physMemoryAllocBlock();
+void* i686_physMemoryAllocBlocks(uint8_t blocks);
+void i686_physMemoryfreeBlocks(void* ptr, uint8_t size);
+uint8_t check_ifUsedBlock(int block);
 void i686_mmnger_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut);
