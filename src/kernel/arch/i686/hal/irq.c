@@ -60,6 +60,9 @@ void i686_IRQ_initialize()
     for(int i = 0; i < 16; i++)
         i686_ISR_registerNewHandler(PIC_REMAP_OFFSET + i, i686_IRQ_handler);
 
+    // pit
+    i686_IRQ_registerNewHandler(0, timer);
+
     // enable interrupts
     i686_enableInterrupts();
     printf("Done !\n\r");

@@ -26,7 +26,7 @@
 #define COUNTER2_PORT       0X42
 #define CW_PORT             0X43
 
-#define FREQUENCY   100
+#define FREQUENCY   1000
 
 typedef enum{
     PIT_ICW_BINARYCODED_DECIMAL = 0X01,
@@ -70,4 +70,23 @@ void i686_PIT_initialize()
     */
 
     printf("Done !\n\r");
+}
+
+uint32_t g_tickcount = 0;
+
+void timer(Registers* regs)
+{
+    g_tickcount++;
+}
+
+uint32_t getTickCount()
+{
+    return g_tickcount;
+}
+
+void sleep(uint32_t ms)
+{
+    uint32_t timeOut = getTickCount() + ms;
+
+    while (timeOut > getTickCount());
 }

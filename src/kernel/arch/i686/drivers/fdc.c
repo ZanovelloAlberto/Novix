@@ -20,10 +20,13 @@
 #include <drivers/fdc.h>
 #include <hal/dma.h>
 #include <hal/irq.h>
+#include <hal/pit.h>
 #include <hal/io.h>
 #include <hal/physMemory_manager.h>
 #include <stdio.h>
+#include <stddef.h>
 
+#define TIMEOUT 1000000
 #define FDC_CHANNEL 2
 #define FDC_BUFFER_BLOCKSIZE 64 / 4
 #define FDC_SECTOR_PER_TRACK 18
@@ -103,19 +106,27 @@ void i686_fdcInterruptHandler(Registers regs)
     g_irqFired = true;
 }
 
-void i686_fdcWaitIrq()
+bool i686_fdcWaitIrq()
 {
-    while (!g_irqFired);
+    uint32_t timeout = TIMEOUT;
+    while (!g_irqFired && timeout--);
+
+    if (timeout == 0)
+        return false; // timed out
+
     g_irqFired = false;
+    return true;
 }
 
-void i686_fdcInitializeDma()
+void i686_fdcInitializeDma(uint32_t phys_buffer, uint32_t count)
 {
     i686_dmaMaskChannel(FDC_CHANNEL);
     i686_dmaResetFlipFlop(false);
-    i686_dmaSetChannelAddr(FDC_CHANNEL, (uint32_t)fdc_buffer);
+
+    i686_dmaSetChannelAddr(FDC_CHANNEL, (uint32_t)phys_buffer);
     i686_dmaResetFlipFlop(false);
-    i686_dmaSetChannelCounter(FDC_CHANNEL, 0x23ff); // count to 0x23ff (number of bytes in a 3.5" floopy disk track)
+
+    i686_dmaSetChannelCounter(FDC_CHANNEL, (count - 1)); // counting from 0
     i686_dmaUnmaskChannel(FDC_CHANNEL);
 }
 
@@ -141,56 +152,58 @@ uint8_t i686_fdcReadMsr()
 
 void i686_fdcDisableController()
 {
-
 	i686_fdcWriteDor(0);
 }
 
 void i686_fdcEnableController()
 {
-	i686_fdcWriteDor( FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
+	i686_fdcWriteDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
 }
 
 void i686_fdcSendCommand(uint8_t cmd)
 {
     uint8_t msr;
-    while(true)
+    uint32_t timeout = TIMEOUT;
+
+    for(int i = 0; i < timeout; i++)
     {
         msr = i686_fdcReadMsr();
-        /*if(!(msr & FDC_MSR_MASK_BUSY) && (msr & FDC_MSR_MASK_DATAREG))*/
-        if(msr & FDC_MSR_MASK_DATAREG)
+        if(!(msr & FDC_MSR_MASK_DATAIO) && (msr & FDC_MSR_MASK_DATAREG))
         {
             i686_outb(FDC_PORT_FIFO, cmd);
             return;
         }
-
-        printf("hello");
     }
 }
 
 uint8_t i686_fdcReadData()
 {
     uint8_t msr;
-    while(true)
+    uint32_t timeout = TIMEOUT;
+
+    for(int i = 0; i < timeout; i++)
     {
         msr = i686_fdcReadMsr();
-        if(!(msr & FDC_MSR_MASK_BUSY) && (msr & FDC_MSR_MASK_DATAREG))
+        if((msr & FDC_MSR_MASK_DATAIO) && (msr & FDC_MSR_MASK_DATAREG))
         {
-            return i686_inb(FDC_PORT_FIFO);;
+            return i686_inb(FDC_PORT_FIFO);
         }
     }
+
+    return 0;
 }
 
 void i686_fdcConfigureDrive(uint32_t step_rate, uint32_t head_load_time, uint32_t head_unload_time, bool dma)
 {
 	uint32_t data = 0;
 
-	//! send command
+	// send command
 	i686_fdcSendCommand (FDC_CMD_SPECIFY);
 
 	data = ( (step_rate & 0xf) << 4) | (head_unload_time & 0xf);
     i686_fdcSendCommand(data);
 
-	data = (head_load_time) << 1 | (dma==false) ? 0 : 1;
+	data = ((head_load_time) << 1) | (dma == false) ? 0 : 1;
     i686_fdcSendCommand (data);
 }
 
@@ -237,10 +250,10 @@ void i686_fdcControlMotor(bool is_on)
 	if (is_on)
         i686_fdcWriteDor(g_currentDrive | motor | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
 	else
-        i686_fdcWriteDor(FDC_DOR_MASK_RESET);
+        i686_fdcWriteDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
 
 	// in all cases; wait a little bit for the motor to spin up/turn off
-	//sleep (50);
+	sleep(50);
 }
 
 bool i686_fdcCalibrate()
@@ -275,7 +288,7 @@ void i686_fdcSetCurrentDrive(uint8_t drive)
     if(drive >= 4)
         return;
 
-    i686_fdcWriteDor(drive | FDC_DOR_MASK_RESET);
+    i686_fdcWriteDor(drive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
     g_currentDrive = drive;
 }
 
@@ -302,11 +315,12 @@ void i686_fdcResetController()
 	i686_fdcCalibrate();
 }
 
-void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector)
+void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer)
 {
-	uint32_t st0, cyl;
+	uint32_t st0 = 0, cyl = 0;
 
 	// set the DMA for read transfer
+    i686_fdcInitializeDma(phys_buffer, 512);
 	i686_fdcDmaRead();
 
 	// read in a sector
@@ -320,7 +334,6 @@ void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector)
 	i686_fdcSendCommand(FDC_GAP3_LENGTH_3_5);
 	i686_fdcSendCommand(0xff);
 
-    printf("here !\n");
 	// wait for irq
 	i686_fdcWaitIrq();
 
@@ -329,7 +342,7 @@ void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector)
         i686_fdcReadData();
 
 	// let FDC know we handled interrupt
-	i686_fdcCheckInterruptStatus(&st0,&cyl);
+	i686_fdcCheckInterruptStatus(&st0, &cyl);
 }
 
 bool i686_fdcSeek(uint32_t cyl, uint32_t head)
@@ -370,30 +383,34 @@ void fdc_lba2chs(uint32_t lba, uint16_t* cylinderOut, uint16_t* sectorOut, uint1
 void i686_fdcInitialize()
 {
     printf("Initializing FDC...\n");
-    fdc_buffer = (uint32_t*)i686_physMemoryAllocBlocks(FDC_BUFFER_BLOCKSIZE);
+    fdc_buffer = (uint32_t*)i686_physMemoryAllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 
-    i686_fdcEnableController();
+    if(fdc_buffer == NULL)
+    {
+        printf("FDC initialize failed !");
+        return;
+    }
+
     i686_disableInterrupts();
+    i686_IRQ_registerNewHandler(6, (IRQHandler)i686_fdcInterruptHandler);
+    i686_enableInterrupts();
 
     i686_fdcSetCurrentDrive(0x0);
-
-    // pass mechanical drive info. steprate=3ms, unload time=240ms, load time=16ms
-    //i686_fdcConfigureDrive(3, 16, 240, true);
-    i686_fdcSelectDataRate(DATA_RATE_500KPS);
-
-    i686_fdcInitializeDma();
-    i686_IRQ_registerNewHandler(6, i686_fdcWaitIrq);
+    i686_fdcResetController();
     
-    i686_enableInterrupts();
     printf("Done !\n");
 
     uint16_t cylinder, sector, head;
-    fdc_lba2chs(1, &cylinder, &sector, &head);
+    fdc_lba2chs(0, &cylinder, &sector, &head);
 
-    i686_fdcSectorRead(head, cylinder,sector);
+    i686_fdcControlMotor(true);
+    i686_fdcSeek(cylinder, head);
+    i686_fdcSectorRead(head, cylinder,sector, (uint32_t)fdc_buffer);
+    i686_fdcControlMotor(false);
 
     for(int i = 0; i < 512; i++)
     {
-        printf("0x%x ", *(uint32_t*)((uint32_t)(fdc_buffer) + 1));
+        printf("0x%x ", *(uint8_t*)((uint32_t)(fdc_buffer) + i));
+        sleep(20);
     }
 }

@@ -29,8 +29,8 @@ typedef enum {
 }DATA_RATE;
 
 void i686_fdcInterruptHandler(Registers regs);
-void i686_fdcWaitIrq();
-void i686_fdcInitializeDma();
+bool i686_fdcWaitIrq();
+void i686_fdcInitializeDma(uint32_t phys_buffer, uint32_t count);
 void i686_fdcDmaRead();
 void i686_fdcDmaWrite();
 void i686_fdcWriteDor(uint8_t flags);
@@ -46,6 +46,6 @@ void i686_fdcControlMotor(bool is_on);
 bool i686_fdcCalibrate();
 void i686_fdcSetCurrentDrive(uint8_t drive);
 void i686_fdcResetController();
-void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector);
+void i686_fdcSectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer);
 bool i686_fdcSeek(uint32_t cyl, uint32_t head);
 void i686_fdcInitialize();

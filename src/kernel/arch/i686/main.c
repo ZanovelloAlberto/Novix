@@ -26,11 +26,6 @@
 #include <drivers/keyboard.h>
 #include <boot_info.h>
 
-void timer(Registers* regs)
-{
-    //putc('.');
-}
-
 const char logo[] = 
 "\
                  _   _            _      \n\
@@ -42,7 +37,6 @@ const char logo[] =
 
 void __attribute__((cdecl)) start(Boot_info* info)
 {
-    i686_IRQ_registerNewHandler(0, timer);
     clr();
 
     printf("%s", logo);

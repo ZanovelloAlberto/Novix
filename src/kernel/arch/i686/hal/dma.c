@@ -148,14 +148,14 @@ void i686_dmaSetChannelAddr(uint8_t channel, uint32_t phys_addr)
         break;
     }
 
-    // set the extended page address registers
-    i686_outb(page_port, (phys_addr >> 16) & 0xff);
-
     //set channel low base address
     i686_outb(channel_port, (phys_addr) & 0xff);
 
     //set channel high base address
     i686_outb(channel_port, (phys_addr >> 8) & 0xff);
+
+    // set the extended page address registers
+    i686_outb(page_port, (phys_addr >> 16) & 0xff);
 }
 
 void i686_dmaSetChannelCounter(uint8_t channel, uint16_t count)
@@ -226,7 +226,7 @@ void i686_dmaSetMode(uint16_t channel, uint8_t mode)
         return;
 
     i686_dmaMaskChannel(channel);
-    i686_outb(channel < 4 ? SLAVE_DMA_PORT_MODE_REG : MASTER_DMA_PORT_MODE_REG, channel < 4 ? (1 << channel) | mode : (1 << channel - 4) | mode);
+    i686_outb(channel < 4 ? SLAVE_DMA_PORT_MODE_REG : MASTER_DMA_PORT_MODE_REG, channel < 4 ? channel | mode : (channel - 4) | mode);
     i686_dmaUnmaskChannel(channel);
 }
 
