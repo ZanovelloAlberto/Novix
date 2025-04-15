@@ -14,9 +14,6 @@ export LD
 export LIBGCC_PATH
 export LIB_DIR
 
-#invalid architecture
-ARCH = arch/
-
 #
 # Floppy image
 #
@@ -29,9 +26,6 @@ $(BUILD_DIR)/main.img: lib bootloader kernel
 	dd if=$(BUILD_DIR)/bootloader.bin of=$(BUILD_DIR)/main.img conv=notrunc
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/boot0.bin "::boot0.bin"
 	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/kernel.bin "::kernel.bin"
-
-i686: ARCH = arch/i686
-i686: floppy_image
 
 
 #
@@ -48,13 +42,13 @@ lib:
 bootloader: stage1 stage2
 
 stage1:
-	$(MAKE) -C $(SRC_DIR)/bootloader/$(ARCH)/stage1/ BUILD_DIR=$(abspath $(BUILD_DIR))
+	$(MAKE) -C $(SRC_DIR)/bootloader/stage1/ BUILD_DIR=$(abspath $(BUILD_DIR))
 
 stage2:
-	$(MAKE) -C $(SRC_DIR)/bootloader/$(ARCH)/stage2/ BUILD_DIR=$(abspath $(BUILD_DIR))
+	$(MAKE) -C $(SRC_DIR)/bootloader/stage2/ BUILD_DIR=$(abspath $(BUILD_DIR))
 
 kernel:
-	$(MAKE) -C $(SRC_DIR)/kernel/$(ARCH) BUILD_DIR=$(abspath $(BUILD_DIR))
+	$(MAKE) -C $(SRC_DIR)/kernel/ BUILD_DIR=$(abspath $(BUILD_DIR))
 
 clean:
 	rm -rf build/*
