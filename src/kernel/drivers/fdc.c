@@ -30,9 +30,9 @@
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
 //============================================================================
 
-#define TIMEOUT 1000000
+#define TIMEOUT 1000
 #define FDC_CHANNEL 2
-#define FDC_BUFFER_BLOCKSIZE 64 / 4
+#define FDC_BUFFER_BLOCKSIZE (64 / 4)
 #define FDC_SECTOR_PER_TRACK 18
 #define FDC_HEAD 2
 
@@ -127,7 +127,7 @@ void FDC_dmaRead();
 void FDC_dmaWrite();
 void FDC_writeDor(uint8_t flags);
 uint8_t FDC_readMsr();
-void FDC_sendCommand(uint8_t cmd);
+bool FDC_sendCommand(uint8_t cmd);
 uint8_t FDC_readData();
 void FDC_selectDataRate(DATA_RATE rate);
 void FDC_checkInterruptStatus(uint32_t* st0, uint32_t* cyl);
@@ -146,7 +146,10 @@ void FDC_interruptHandler(Registers regs)
 bool FDC_waitIrq()
 {
     uint32_t timeout = TIMEOUT;
-    while (!g_irqFired && timeout--);
+    while (!g_irqFired && timeout--)
+    {
+        sleep(1); // sleep 1ms
+    }
 
     if (timeout == 0)
         return false; // timed out
@@ -187,7 +190,7 @@ uint8_t FDC_readMsr()
     return inb(FDC_PORT_MSR);
 }
 
-void FDC_sendCommand(uint8_t cmd)
+bool FDC_sendCommand(uint8_t cmd)
 {
     uint8_t msr;
     uint32_t timeout = TIMEOUT;
@@ -198,9 +201,12 @@ void FDC_sendCommand(uint8_t cmd)
         if(!(msr & FDC_MSR_MASK_DATAIO) && (msr & FDC_MSR_MASK_DATAREG))
         {
             outb(FDC_PORT_FIFO, cmd);
-            return;
+            return true;
         }
+        sleep(1);
     }
+
+    return false; // timed out
 }
 
 uint8_t FDC_readData()
@@ -215,9 +221,11 @@ uint8_t FDC_readData()
         {
             return inb(FDC_PORT_FIFO);
         }
+
+        sleep(1); // sleep 1ms
     }
 
-    return 0;
+    return -1; // timed out
 }
 
 void FDC_selectDataRate(DATA_RATE rate)
@@ -243,7 +251,7 @@ void FDC_configureDrive(uint32_t step_rate, uint32_t head_load_time, uint32_t he
 	data = ( (step_rate & 0xf) << 4) | (head_unload_time & 0xf);
     FDC_sendCommand(data);
 
-	data = ((head_load_time) << 1) | (dma == false) ? 0 : 1;
+	data = ((head_load_time) << 1) | ((dma == true) ? 0 : 1);
     FDC_sendCommand (data);
 }
 
@@ -367,25 +375,24 @@ void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_b
 	FDC_dmaRead();
 
 	// read in a sector
-	FDC_sendCommand(FDC_CMD_READ_SECT | FDC_CMD_EXT_MULTITRACK | FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
+    FDC_sendCommand(FDC_CMD_READ_SECT | FDC_CMD_EXT_MULTITRACK | FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
 	FDC_sendCommand(head << 2 | g_currentDrive);
 	FDC_sendCommand(track);
 	FDC_sendCommand(head);
 	FDC_sendCommand(sector);
 	FDC_sendCommand(FDC_SECTOR_SIZE_512);
-	FDC_sendCommand((( sector + 1 ) >= FDC_SECTOR_PER_TRACK ) ? FDC_SECTOR_PER_TRACK : sector + 1);
+	FDC_sendCommand((( sector + 1 ) >= FDC_SECTOR_PER_TRACK ) ? FDC_SECTOR_PER_TRACK : (sector + 1));
 	FDC_sendCommand(FDC_GAP3_LENGTH_3_5);
 	FDC_sendCommand(0xff);
 
 	// wait for irq
 	FDC_waitIrq();
 
+    uint8_t ret[7];
 	// read status info
-	for (int j=0; j<7; j++)
-        FDC_readData();
+	for(int j=0; j<7; j++)
+        ret[j] = FDC_readData();
 
-	// let FDC know we handled interrupt
-	FDC_checkInterruptStatus(&st0, &cyl);
 }
 
 bool FDC_seek(uint32_t cyl, uint32_t head)
@@ -430,7 +437,7 @@ void FDC_initialize()
 
     if(fdc_buffer == NULL)
     {
-        printf("FDC initialize failed !");
+        printf("FDC initialize failed !\n");
         return;
     }
 
