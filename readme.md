@@ -34,8 +34,10 @@ FAT=mkfs.fat
 ASM=nasm
 CC=/home/novice/cross/i686-elf/bin/i686-elf-gcc
 LD=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LIBGCC_PATH= /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
+LIBGCC_PATH=/home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
 ```
+
+---
 
 ### 2. Building the Project
 
@@ -46,6 +48,34 @@ make
 ```
 
 The compiled binary will be generated in the output directory specified in your `Makefile`.
+
+---
+
+## 🚀 Running the OS
+
+After compilation, you can run the NOVIX operating system using one of the following options:
+
+### ✅ Using QEMU
+
+Run the following script to launch NOVIX with QEMU:
+
+```bash
+./run.sh
+```
+
+### ✅ Using Bochs
+
+Alternatively, to launch NOVIX using Bochs, run:
+
+```bash
+./runbochs
+```
+
+> Make sure that both scripts (`run.sh` and `runbochs`) are executable:
+>
+> ```bash
+> chmod +x run.sh runbochs
+> ```
 
 ---
 
@@ -64,6 +94,6 @@ The compiled binary will be generated in the output directory specified in your 
 
 ---
 
-# Feedback
+## 💬 Feedback
 
-I would love to hear your suggestions and feedbacks on my [discord]() 🚀
+I would love to hear your suggestions and feedback on my [Discord]() 🚀
