@@ -96,4 +96,4 @@ Alternatively, to launch NOVIX using Bochs, run:
 
 ## 💬 Feedback
 
-I would love to hear your suggestions and feedback on my [Discord]() 🚀
+I would love to hear your suggestions and feedback on my [Discord](https://discord.com/users/1293495548346892313) 🚀
