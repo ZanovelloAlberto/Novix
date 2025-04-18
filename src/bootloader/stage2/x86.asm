@@ -340,8 +340,8 @@ x86_Get_MemorySize:
     pop ebp
     ret
 
-global x86_Get_MemoryMapEntry
-x86_Get_MemoryMapEntry:
+global x86_Get_MemoryMap
+x86_Get_MemoryMap:
     ; make new call frame
     push ebp             ; save old call frame
     mov ebp, esp          ; initialize new call frame
@@ -356,28 +356,58 @@ x86_Get_MemoryMapEntry:
 
     x86_EnterRealMode
 
-    mov eax, 0xe820
-    mov ecx, 20
-    mov edx, 0x534D4150
+    LinearToSegOffset [bp+8], es, edi, di   ; Set DI register for memory storage
 
-    LinearToSegOffset [bp+12], ds, esi, si
-    mov ebx, [ds:si]
+    xor ebx, ebx                ; EBX must be 0
+    xor si, si                  ; SI must be 0 (to keep an entry count)
 
-    LinearToSegOffset [bp+8], es, edi, di
-    int 15h
-    jc .failed
+    mov edx, 0x534D4150         ; Place "SMAP" into edx | The "SMAP" signature ensures that the BIOS provides the correct memory map format
+    mov eax, 0xe820             ; Function 0xE820 to get memory map
+    mov ecx, 20                 ; Request 20 bytes of data
 
-    cmp eax, 0x534D4150
-    jne .failed
+    int 0x15                    ; using interrupt
 
-    mov [ds:si], ebx
+    jc short .failed            ; carry set on first call means "unsupported function"
+
+    mov edx, 0x534D4150         ; Some BIOSes apparently trash this register? lets set it again
+    cmp eax, edx                ; on success, eax must have been reset to "SMAP"
+    jne short .failed
+
+    test ebx, ebx               ; ebx = 0 implies list is only 1 entry long (worthless)
+    je short .failed
+    jmp short .jmpin
+    
+.e820lp:
+    mov eax, 0xe820             ; eax, ecx get trashed on every int 0x15 call
+    mov ecx, 20                 ; ask for 20 bytes again
+    int 0x15
+    jc short .done              ; carry set means "end of list already reached"
+    mov edx, 0x534D4150         ; repair potentially trashed register
+
+.jmpin:
+    jcxz .skipent               ; skip any 0 length entries (If ecx is zero, skip this entry (indicates an invalid entry length))
+
+.notext:
+    mov eax, [es:di + 8]        ; get lower uint32_t of memory region length
+    or eax, [es:di + 12]        ; "or" it with upper uint32_t to test for zero and form 64 bits (little endian)
+    jz .skipent                 ; if length uint64_t is 0, skip entry
+    inc si                      ; got a good entry: ++count, move to next storage spot
+    add di, 20                  ; move next entry into buffer
+
+.skipent:
+    test ebx, ebx               ; if ebx resets to 0, list is complete
+    jne short .e820lp
     jmp .done
 
 
 .failed:
-    mov eax, 0
+    mov eax, -1                 ; error code
 
 .done:
+
+    mov ebx, [bp+12]            ; memory entry count
+    mov [ebx], si
+
     push eax
     x86_EnterProtectedMode
     pop eax

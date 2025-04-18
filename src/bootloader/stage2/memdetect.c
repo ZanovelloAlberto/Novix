@@ -20,6 +20,7 @@
 #define MAX_MEMORY_ENTRY 256
 #include "x86.h"
 #include "memdefs.h"
+#include "stdio.h"
 
 Memory_mapEntry* g_memoryBlockEntries = MEMORY_MAP_ADDR;
 
@@ -33,12 +34,8 @@ void memoryDetect(Boot_info* info)
 
     info->memorySize = x86_Get_MemorySize();
 
-    do
-    {
-        ret = x86_Get_MemoryMapEntry(&memoryBlockEntry, &continuation);
-        g_memoryBlockEntries[memoryBlockCount] = memoryBlockEntry;
-        memoryBlockCount++;
-    }while(ret != 0 && continuation != 0 );
+    if(x86_Get_MemoryMap(g_memoryBlockEntries, &memoryBlockCount) == -1)
+        return; // failed
 
     info->memoryBlockCount = memoryBlockCount;
     info->memoryBlockEntries = g_memoryBlockEntries;

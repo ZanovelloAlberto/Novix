@@ -43,4 +43,4 @@ bool __attribute__((cdecl)) x86_Disk_Read(uint8_t drive,
                                           void* lowerDataOut);
 
 uint32_t __attribute__((cdecl)) x86_Get_MemorySize();
-uint16_t __attribute__((cdecl)) x86_Get_MemoryMapEntry(Memory_mapEntry* entry, uint32_t* continuation);
+uint32_t __attribute__((cdecl)) x86_Get_MemoryMap(Memory_mapEntry* entries, uint32_t* memoryBlockCount);
