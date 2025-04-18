@@ -268,7 +268,6 @@ void* PHYSMEM_AllocBlocks(uint8_t block_size)
         index++;
         if(PHYSMEM_checkIfBlockUsed(index))
         {
-            debug++;
             count = 1;
             index = PHYSMEM_firstFreeBlockFrom(index);
             block_addr = index;
@@ -277,7 +276,6 @@ void* PHYSMEM_AllocBlocks(uint8_t block_size)
         count++;
     }
     
-    printf("debug: %d, count: %d, index: %d\n", debug, count, index);
     return NULL;
 }
 

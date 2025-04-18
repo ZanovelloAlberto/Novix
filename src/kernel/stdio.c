@@ -109,8 +109,6 @@ char getchar()
         ascii = KEYBOARD_scanToAscii(key);
     }
 
-    //printf("0x%x", key);
-
 	// discard last keypress (we handled it) and return
 	KEYBOARD_discardLastKey();
 	return ascii;
@@ -160,6 +158,19 @@ void putc(const char c)
             break;
         case '\r':
             column = 0;
+            break;
+        case '\b':
+            if(column == 0)
+            {
+                if(line > 0)
+                {
+                    line--;
+                    column = WIDTH - 1;
+                }
+            }else{
+                column--;
+            }
+            vga[line * WIDTH + (column)] = ' ' | currentColor;
             break;
         case '\t':
             if(column == WIDTH){

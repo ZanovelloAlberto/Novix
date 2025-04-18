@@ -18,10 +18,10 @@
 */
 
 #include <stdio.h>
+#include <stddef.h>
+#include <memory.h>
+#include <shell.h>
 #include <hal/hal.h>
-#include <hal/irq.h>
-#include <hal/physmem_manager.h>
-#include <hal/virtmem_manager.h>
 #include <drivers/fdc.h>
 #include <drivers/keyboard.h>
 #include <boot_info.h>
@@ -53,11 +53,18 @@ void __attribute__((cdecl)) start(Boot_info* info)
     FDC_initialize();
     KEYBOARD_initialize();
 
-    char c;
     while(1)
     {
-        c = getchar();
-        printf("%c", c);
+        printf("root@host> ");
+
+        //reading
+        shellRead();
+
+        //parsing
+        shellParse();
+        
+        //execute
+        shellExecute();
     }
 
 end:

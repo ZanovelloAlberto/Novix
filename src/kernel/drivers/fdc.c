@@ -449,21 +449,4 @@ void FDC_initialize()
     FDC_resetController();
     
     printf("Done !\n");
-
-    // testing ...
-    uint16_t cylinder, sector, head;
-    fdc_lba2chs(0, &cylinder, &sector, &head);
-
-    FDC_controlMotor(true);
-    FDC_seek(cylinder, head);
-    FDC_sectorRead(head, cylinder,sector, (uint32_t)fdc_buffer);
-    FDC_controlMotor(false);
-
-    for(int i = 0; i < 512; i++)
-    {
-        printf("0x%x ", *(uint8_t*)((uint32_t)(fdc_buffer) + i));
-        sleep(20);
-    }
-
-    printf("\n");
 }
