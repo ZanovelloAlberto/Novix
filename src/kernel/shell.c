@@ -20,7 +20,11 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <hal/io.h>
+#include <hal/pit.h>
+#include <drivers/fdc.h>
 #include <memory.h>
+#include <string.h>
 #include <shell.h>
 
 //============================================================================
@@ -40,14 +44,24 @@ typedef enum {
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
 
+volatile const char logo[] = 
+"\
+                 _   _            _      \n\
+                | \\ | | _____   _(_)_  __\n\
+                |  \\| |/ _ \\ \\ / / \\ \\/ /\n\
+                | |\\  | (_) \\ V /| |>  < \n\
+                |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
+";
+
 char prompt[MAX_CHAR_PROMPT];
 char* args[MAX_CMD_ARGS];
+int argc;
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTIONS
 //============================================================================
 
-void stringPurify(char* source)
+void promptPurify(char* source)
 {
     /*
     * strip leading and trailing spaces
@@ -83,6 +97,27 @@ void stringPurify(char* source)
         *index = '\0';
         index--;
     }
+}
+
+void promptShift(char* source, int places)
+{
+    char* index = source + places;
+
+    if(*index == '\0') // if you shift the whole string
+    {
+        *source = '\0';
+        return;
+    }
+
+    //shifting the string
+    while(*index != '\0' && *source != '\0')
+    {
+        *source = *index;
+        index++;
+        source++;
+    }
+
+    *source = '\0';
 }
 
 //============================================================================
@@ -130,13 +165,13 @@ void shellRead()
 void shellParse()
 {
     char *begin, *end;
-    int position = 0;
 
     bool quoteFlag = false; // used to handle the "" or '' on the prompt
     QUOTE_FLAG_STATE quoteFlagState = QUOTE_STATE_FREE;
 
     memset(args, (int)NULL, MAX_CMD_ARGS);
-    stringPurify(prompt);
+    argc = 0;
+    promptPurify(prompt);
 
     begin = prompt;
     end = begin;
@@ -155,11 +190,13 @@ void shellParse()
             case '"':
                 quoteFlag = true;
                 quoteFlagState = WAIT_FOR_DOUBLE_QUOTE;
+                promptShift(end, 1);    // delete that character
                 break;
 
             case '\'':
                 quoteFlag = true;
                 quoteFlagState = WAIT_FOR_SINGLE_QUOTE;
+                promptShift(end, 1);
                 break;
             
             default:
@@ -169,14 +206,20 @@ void shellParse()
         else if(quoteFlagState == WAIT_FOR_DOUBLE_QUOTE)
         {
             if(*end == '"')
+            {
                 quoteFlag = false;
                 quoteFlagState = QUOTE_STATE_FREE;
+                promptShift(end, 1);
+            }
         }
         else
         {
             if(*end == '\'')
+            {
                 quoteFlag = false;
                 quoteFlagState = QUOTE_STATE_FREE;
+                promptShift(end, 1);
+            }
         }
 
 
@@ -187,24 +230,66 @@ void shellParse()
             *end = '\0';
 
             //add string to args
-            args[position] = begin;
-            position++;
+            args[argc] = begin;
+            argc++;
 
             // set begin to the next string
             begin = end + 1;
         }
 
         end++;
-    }while(*end != '\0' && position < (MAX_CMD_ARGS - 1));  // save one character args must end with NULL
+    }while(*end != '\0' && argc < (MAX_CMD_ARGS - 1));  // save one character args must end with NULL
 
-    args[position] = begin; // adding the last remaining string in the args list
-    position++;
+    args[argc] = begin; // adding the last remaining string in the args list
+    argc++;
 }
 
+void helpCommand(int argc, char** argv);
+void dumpsectorCommand(int argc, char** argv);
 void shellExecute()
 {
-    printf("%s\n", prompt);
-    for (int i = 0; i < MAX_CMD_ARGS && args[i] != NULL; i++)
-        printf("args[%d] = %s\n", i, args[i]);
     
+    if(strcmp(prompt, "help") == 0)
+        helpCommand(argc, args);
+    else if(strcmp(prompt, "clear") == 0)
+        clr();
+    else if(strcmp(prompt, "exit") == 0)
+        panic();
+    else if(strcmp(prompt, "dumpsector") == 0)
+        dumpsectorCommand(argc, args);
+    else
+        printf("%s: Unknown command", prompt);
+
+    printf("\n");
+}
+
+void helpCommand(int argc, char** argv)
+{
+    printf("%s", logo);
+    putc('\n');
+
+    puts("Supported command:\n");
+    puts(" - help: display this message\n");
+    puts(" - clear: clear the screen\n");
+    puts(" - exit: halt the system (forever)\n");
+    puts(" - dumpsector: read a sector on disk\n");
+}
+
+void dumpsectorCommand(int argc, char** argv)
+{
+    uint8_t* phys_buffer;
+
+    if(argc > 2 || argc < 2)
+    {
+        puts("Usage: dumpsector <sector number>");
+        return;
+    }
+
+    phys_buffer = (uint8_t*)FDC_readSectors(0, 1);    // let's hope it's identity mapped. will need to map it if necessary
+    for(int i = 0; i < 512; i++)
+    {
+        printf("0x%x ", phys_buffer[i]);
+        sleep(10);
+    }
+
 }

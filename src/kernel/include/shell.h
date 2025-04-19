@@ -17,6 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
+//============================================================================
+//    IMPLEMENTATION INTERFACE FUNCTION
+//============================================================================
+
 void shellRead();
 void shellParse();
 void shellExecute();

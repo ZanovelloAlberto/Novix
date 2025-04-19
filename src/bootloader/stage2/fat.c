@@ -20,8 +20,8 @@
 #include "fat.h"
 #include "stdio.h"
 #include <memory.h>
-#include "string.h"
-#include "ctype.h"
+#include <string.h>
+#include <ctype.h>
 
 #include "memdefs.h"
 

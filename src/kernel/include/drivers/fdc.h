@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
 #include <stdint.h>
 #include <stdbool.h>
 #include <hal/irq.h>
@@ -29,9 +30,8 @@
 void FDC_disableController();
 void FDC_enableController();
 void FDC_resetController();
-void FDC_controlMotor(bool is_on);
 bool FDC_calibrate();
 void FDC_setCurrentDrive(uint8_t drive);
-void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer);
 bool FDC_seek(uint32_t cyl, uint32_t head);
+uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count);
 void FDC_initialize();
