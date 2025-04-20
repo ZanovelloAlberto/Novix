@@ -65,7 +65,7 @@ void IDT_setGate(int interrupt, void* offset, uint8_t attribute)
 
 void IDT_initilize()
 {
-    printf("Initializing the IDT...\n\r");
+    puts("Initializing the IDT...\n\r");
     IDT_flush(&g_IDTdescriptor);
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }

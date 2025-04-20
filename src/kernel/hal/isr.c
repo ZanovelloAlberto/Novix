@@ -93,7 +93,7 @@ void ISR_handler(Registers* regs)
 
         printf("  interrupt=%x  errorcode=%x\n", regs->interrupt, regs->error);
 
-        printf("KERNEL PANIC!\n");
+        puts("KERNEL PANIC!\n");
         panic();
     }
 }
@@ -104,9 +104,9 @@ void ISR_handler(Registers* regs)
 
 void ISR_initialze()
 {
-    printf("Initializing ISR...\n\r");
+    puts("Initializing ISR...\n\r");
     ISR_initializeGates();
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 void ISR_registerNewHandler(int interrupt, ISRHandler handler)

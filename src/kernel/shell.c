@@ -260,7 +260,7 @@ void shellExecute()
     else
         printf("%s: Unknown command", prompt);
 
-    printf("\n");
+    puts("\n");
 }
 
 void helpCommand(int argc, char** argv)
@@ -272,7 +272,7 @@ void helpCommand(int argc, char** argv)
     puts(" - help: display this message\n");
     puts(" - clear: clear the screen\n");
     puts(" - exit: halt the system (forever)\n");
-    puts(" - dumpsector: read a sector on disk\n");
+    puts(" - dumpsector: read a sector on disk and display the content\n");
 }
 
 void dumpsectorCommand(int argc, char** argv)
@@ -285,11 +285,18 @@ void dumpsectorCommand(int argc, char** argv)
         return;
     }
 
-    phys_buffer = (uint8_t*)FDC_readSectors(0, 1);    // let's hope it's identity mapped. will need to map it if necessary
-    for(int i = 0; i < 512; i++)
+    phys_buffer = (uint8_t*)FDC_readSectors((uint16_t)strtol(argv[1], NULL, 0), 1);    // let's hope it's identity mapped. will need to map it if necessary
+
+    int c = 256;
+    for(int i = 0; i < 2; i++)
     {
-        printf("0x%x ", phys_buffer[i]);
-        sleep(10);
+        for(int j = 0; j < 256; j++)
+        {
+            printf("0x%x ", phys_buffer[j + (c * i)]);
+            sleep(5);
+        }
+        puts("\n\rPress any key to continue\n\r");
+        waitForKeyPress();
     }
 
 }

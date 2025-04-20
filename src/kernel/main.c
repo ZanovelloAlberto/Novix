@@ -40,7 +40,7 @@ void __attribute__((cdecl)) start(Boot_info* info)
 
     while(1)
     {
-        printf("root@host> ");
+        puts("root@host> ");
 
         //reading
         shellRead();

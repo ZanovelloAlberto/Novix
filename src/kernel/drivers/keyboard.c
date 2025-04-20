@@ -282,14 +282,14 @@ KEYCODE KEYBOARD_getLastKey()
 
 void KEYBOARD_initialize()
 {
-    printf("initializing Keyboard...\n\r");
+    puts("initializing Keyboard...\n\r");
 
     disableInterrupts();
     KEYBOARD_enable(); // just in case !
 
     if(!KEYBOARD_selfTest() || !KEYBOARD_interfaceTest())
     {
-        printf("keyboard initialization failed");
+        puts("keyboard initialization failed");
         KEYBOARD_disable();
         return;
     }
@@ -300,7 +300,7 @@ void KEYBOARD_initialize()
     IRQ_registerNewHandler(1, (IRQHandler)KEYBOARD_interruptHandler);
     enableInterrupts();
 
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 char KEYBOARD_scanToAscii(uint8_t scancode)

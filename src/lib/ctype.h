@@ -22,4 +22,7 @@
 #include <stdbool.h>
 
 bool islower(char chr);
+bool isupper(char chr);
 char toupper(char chr);
+bool isalpha(char chr);
+bool isdigit(char chr);

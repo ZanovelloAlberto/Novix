@@ -457,12 +457,12 @@ uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
 
 void FDC_initialize()
 {
-    printf("Initializing FDC...\n");
+    puts("Initializing FDC...\n");
     fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 
     if(fdc_buffer == NULL)
     {
-        printf("FDC initialize failed !\n");
+        puts("FDC initialize failed !\n");
         return;
     }
 
@@ -473,5 +473,5 @@ void FDC_initialize()
     FDC_setCurrentDrive(0x0);
     FDC_resetController();
     
-    printf("Done !\n");
+    puts("Done !\n");
 }

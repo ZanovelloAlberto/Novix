@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 #include <hal/io.h>
-#include <drivers/keyboard.h>
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -112,6 +111,21 @@ char getchar()
 	// discard last keypress (we handled it) and return
 	KEYBOARD_discardLastKey();
 	return ascii;
+}
+
+KEYCODE waitForKeyPress()
+{
+    KEYCODE key = NULL_KEY;
+
+    KEYBOARD_discardLastKey();
+
+	// wait for a keypress
+	while (key == NULL_KEY)
+		key = KEYBOARD_getLastKey();
+
+	// discard last keypress (we handled it) and return
+	KEYBOARD_discardLastKey();
+	return key;
 }
 
 /** clr:

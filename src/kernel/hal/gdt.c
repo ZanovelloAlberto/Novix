@@ -123,7 +123,7 @@ void __attribute__((cdecl)) GDT_flush(Gdt_descriptor* descriptor);
 
 void GDT_initilize()
 {
-    printf("Initializing the GDT...\n\r");
+    puts("Initializing the GDT...\n\r");
     GDT_flush(&g_GDTdescriptor);
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }

@@ -19,6 +19,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <drivers/keyboard.h>
 
 //============================================================================
 //    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -35,6 +36,7 @@
 //============================================================================
 
 char getchar();
+KEYCODE waitForKeyPress();
 void puts(const char* s);
 void putc(const char s);
 void printf(const char* fmt, ...);
