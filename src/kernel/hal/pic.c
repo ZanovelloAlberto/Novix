@@ -80,7 +80,7 @@ enum {
 
 void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
 {
-    printf("Configuring PIC...\n\r");
+    puts("Configuring PIC...\n\r");
 
     // initialization control word 1
     outb(PIC1_COMMAND_PORT, PIC_ICW1_ICW4 | PIC_ICW1_INITIALIZE);
@@ -112,7 +112,7 @@ void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
     outb(PIC2_DATA_PORT, 0);
     iowait();
 
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 void PIC_sendEndOfInterrupt(int irq)

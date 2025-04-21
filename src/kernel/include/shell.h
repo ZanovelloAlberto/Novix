@@ -18,20 +18,11 @@
 */
 
 #pragma once
-#include <stdint.h>
-#include <stdbool.h>
-#include <hal/irq.h>
-
 
 //============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
+//    IMPLEMENTATION INTERFACE FUNCTION
 //============================================================================
 
-void FDC_disableController();
-void FDC_enableController();
-void FDC_resetController();
-bool FDC_calibrate();
-void FDC_setCurrentDrive(uint8_t drive);
-bool FDC_seek(uint32_t cyl, uint32_t head);
-uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count);
-void FDC_initialize();
+void shellRead();
+void shellParse();
+void shellExecute();

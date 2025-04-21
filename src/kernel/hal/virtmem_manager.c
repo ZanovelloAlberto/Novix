@@ -105,7 +105,7 @@ void VIRTMEM_mapPage (void* virt)
 
 void VIRTMEM_initialize()
 {
-    printf("initializing virtual memory manager...\n\r");
+    puts("initializing virtual memory manager...\n\r");
 
     // allocate default page directory table
     PDE* page_directory = PHYSMEM_AllocBlock();
@@ -118,7 +118,7 @@ void VIRTMEM_initialize()
 
     if(page_directory == NULL || table_0 == NULL || table_768 == NULL)
     {
-        printf("Virtual Memory manager initialize failed !\n\r");
+        puts("Virtual Memory manager initialize failed !\n\r");
         return;
     }
 
@@ -158,5 +158,5 @@ void VIRTMEM_initialize()
 
     switchPDBR(page_directory);
     enablePaging();    // just in case ...
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }

@@ -17,9 +17,37 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include <stdint.h>
-#include <stdbool.h>
+#include "ctype.h"
 
-bool islower(char chr);
-char toupper(char chr);
+bool islower(char chr)
+{
+    return chr >= 'a' && chr <= 'z';
+}
+
+bool isupper(char chr)
+{
+    return chr >= 'A' && chr <= 'Z';
+}
+
+char toupper(char chr)
+{
+    return islower(chr) ? (chr - 'a' + 'A') : chr;
+}
+
+bool isalpha(char chr)
+{
+    return (chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z');
+}
+
+bool isdigit(char chr)
+{
+    char num[] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+
+    for(int i = 0; i < 10; i++)
+    {
+        if(num[i] == chr)
+            return true;
+    }
+
+    return false;
+}

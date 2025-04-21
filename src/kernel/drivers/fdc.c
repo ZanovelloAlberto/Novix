@@ -132,6 +132,8 @@ uint8_t FDC_readData();
 void FDC_selectDataRate(DATA_RATE rate);
 void FDC_checkInterruptStatus(uint32_t* st0, uint32_t* cyl);
 void FDC_configureDrive(uint32_t step_rate, uint32_t head_load_time, uint32_t head_unload_time, bool dma);
+void FDC_controlMotor(bool is_on);
+void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer);
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTIONS
@@ -255,22 +257,6 @@ void FDC_configureDrive(uint32_t step_rate, uint32_t head_load_time, uint32_t he
     FDC_sendCommand (data);
 }
 
-
-//============================================================================
-//    INTERFACE FUNCTIONS
-//============================================================================
-
-
-void FDC_disableController()
-{
-	FDC_writeDor(0);
-}
-
-void FDC_enableController()
-{
-	FDC_writeDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
-}
-
 void FDC_controlMotor(bool is_on)
 {
 
@@ -305,6 +291,49 @@ void FDC_controlMotor(bool is_on)
 
 	// in all cases; wait a little bit for the motor to spin up/turn off
 	sleep(50);
+}
+
+void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer)
+{
+	uint32_t st0 = 0, cyl = 0;
+
+	// set the DMA for read transfer
+    FDC_initializeDma(phys_buffer, 512);
+	FDC_dmaRead();
+
+	// read in a sector
+    FDC_sendCommand(FDC_CMD_READ_SECT | FDC_CMD_EXT_MULTITRACK | FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
+	FDC_sendCommand(head << 2 | g_currentDrive);
+	FDC_sendCommand(track);
+	FDC_sendCommand(head);
+	FDC_sendCommand(sector);
+	FDC_sendCommand(FDC_SECTOR_SIZE_512);
+	FDC_sendCommand((( sector + 1 ) >= FDC_SECTOR_PER_TRACK ) ? FDC_SECTOR_PER_TRACK : (sector + 1));
+	FDC_sendCommand(FDC_GAP3_LENGTH_3_5);
+	FDC_sendCommand(0xff);
+
+	// wait for irq
+	FDC_waitIrq();
+
+    uint8_t ret[7];
+	// read status info
+	for(int j=0; j<7; j++)
+        ret[j] = FDC_readData();
+}
+
+//============================================================================
+//    INTERFACE FUNCTIONS
+//============================================================================
+
+
+void FDC_disableController()
+{
+	FDC_writeDor(0);
+}
+
+void FDC_enableController()
+{
+	FDC_writeDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
 }
 
 bool FDC_calibrate()
@@ -366,35 +395,6 @@ void FDC_resetController()
 	FDC_calibrate();
 }
 
-void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer)
-{
-	uint32_t st0 = 0, cyl = 0;
-
-	// set the DMA for read transfer
-    FDC_initializeDma(phys_buffer, 512);
-	FDC_dmaRead();
-
-	// read in a sector
-    FDC_sendCommand(FDC_CMD_READ_SECT | FDC_CMD_EXT_MULTITRACK | FDC_CMD_EXT_SKIP | FDC_CMD_EXT_DENSITY);
-	FDC_sendCommand(head << 2 | g_currentDrive);
-	FDC_sendCommand(track);
-	FDC_sendCommand(head);
-	FDC_sendCommand(sector);
-	FDC_sendCommand(FDC_SECTOR_SIZE_512);
-	FDC_sendCommand((( sector + 1 ) >= FDC_SECTOR_PER_TRACK ) ? FDC_SECTOR_PER_TRACK : (sector + 1));
-	FDC_sendCommand(FDC_GAP3_LENGTH_3_5);
-	FDC_sendCommand(0xff);
-
-	// wait for irq
-	FDC_waitIrq();
-
-    uint8_t ret[7];
-	// read status info
-	for(int j=0; j<7; j++)
-        ret[j] = FDC_readData();
-
-}
-
 bool FDC_seek(uint32_t cyl, uint32_t head)
 {
 	uint32_t st0, cyl0;
@@ -430,14 +430,39 @@ void fdc_lba2chs(uint32_t lba, uint16_t* cylinderOut, uint16_t* sectorOut, uint1
     *headOut = (lba / FDC_SECTOR_PER_TRACK) % FDC_HEAD;
 }
 
+uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
+{
+    uint16_t cylinder, sector, head;
+
+    if(sector_count > 128)
+        return NULL;     // cannot read we only have 64k of buffer
+
+    FDC_controlMotor(true);
+
+    for (size_t i = 0; i < sector_count; i++)
+    {
+        lba = lba + i;
+        if(lba > 2880)
+            return fdc_buffer;  // out of range !
+        
+        fdc_lba2chs(lba, &cylinder, &sector, &head);
+        FDC_seek(cylinder, head);
+        FDC_sectorRead(head, cylinder,sector, ((uint32_t)fdc_buffer + 512 * i));
+    }
+
+    FDC_controlMotor(false);
+
+    return fdc_buffer;
+}
+
 void FDC_initialize()
 {
-    printf("Initializing FDC...\n");
-    fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB and it's identity mapped.
+    puts("Initializing FDC...\n");
+    fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 
     if(fdc_buffer == NULL)
     {
-        printf("FDC initialize failed !\n");
+        puts("FDC initialize failed !\n");
         return;
     }
 
@@ -448,22 +473,5 @@ void FDC_initialize()
     FDC_setCurrentDrive(0x0);
     FDC_resetController();
     
-    printf("Done !\n");
-
-    // testing ...
-    uint16_t cylinder, sector, head;
-    fdc_lba2chs(0, &cylinder, &sector, &head);
-
-    FDC_controlMotor(true);
-    FDC_seek(cylinder, head);
-    FDC_sectorRead(head, cylinder,sector, (uint32_t)fdc_buffer);
-    FDC_controlMotor(false);
-
-    for(int i = 0; i < 512; i++)
-    {
-        printf("0x%x ", *(uint8_t*)((uint32_t)(fdc_buffer) + i));
-        sleep(20);
-    }
-
-    printf("\n");
+    puts("Done !\n");
 }

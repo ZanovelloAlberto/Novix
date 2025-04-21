@@ -17,10 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-
 #pragma once
+#include <stdint.h>
+#include <stdbool.h>
 
-const char* strchr(const char* str, char chr);
-char* strcpy(char* dst, const char* src);
-unsigned strlen(const char* str);
+bool islower(char chr);
+bool isupper(char chr);
+char toupper(char chr);
+bool isalpha(char chr);
+bool isdigit(char chr);

@@ -17,16 +17,14 @@
 
 bits 16
 
-extern start
-
-jmp entry
+section .entry
+    jmp entry
 
 %include "gdt.inc"
 %include "a20Line.inc"
 
 extern start
 global entry
-
 entry:
     ; save boot drive
     mov [g_BootDrive], dl

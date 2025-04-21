@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 #include <hal/io.h>
-#include <drivers/keyboard.h>
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -109,11 +108,24 @@ char getchar()
         ascii = KEYBOARD_scanToAscii(key);
     }
 
-    //printf("0x%x", key);
-
 	// discard last keypress (we handled it) and return
 	KEYBOARD_discardLastKey();
 	return ascii;
+}
+
+KEYCODE waitForKeyPress()
+{
+    KEYCODE key = NULL_KEY;
+
+    KEYBOARD_discardLastKey();
+
+	// wait for a keypress
+	while (key == NULL_KEY)
+		key = KEYBOARD_getLastKey();
+
+	// discard last keypress (we handled it) and return
+	KEYBOARD_discardLastKey();
+	return key;
 }
 
 /** clr:
@@ -160,6 +172,19 @@ void putc(const char c)
             break;
         case '\r':
             column = 0;
+            break;
+        case '\b':
+            if(column == 0)
+            {
+                if(line > 0)
+                {
+                    line--;
+                    column = WIDTH - 1;
+                }
+            }else{
+                column--;
+            }
+            vga[line * WIDTH + (column)] = ' ' | currentColor;
             break;
         case '\t':
             if(column == WIDTH){

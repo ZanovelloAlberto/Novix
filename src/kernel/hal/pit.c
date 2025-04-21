@@ -60,7 +60,7 @@ void PIT_initialize()
 {
     uint32_t count = 1193180 / FREQUENCY;
 
-    printf("Initializing PIT...\n\r");
+    puts("Initializing PIT...\n\r");
 
     // configuring COUNTER 0 for irq0
     outb(CW_PORT, PIT_ICW_BINARYCODED_DECIMAL | PIT_ICW_MODE2 | PIT_ICW_RL_LSB_MSB | PIT_ICW_COUNTER0);
@@ -77,7 +77,7 @@ void PIT_initialize()
     * configuring COUNTER 2 for PC speaker
     */
 
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 uint32_t g_tickcount = 0;

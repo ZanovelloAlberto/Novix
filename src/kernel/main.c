@@ -18,26 +18,13 @@
 */
 
 #include <stdio.h>
+#include <stddef.h>
+#include <memory.h>
+#include <shell.h>
 #include <hal/hal.h>
-#include <hal/irq.h>
-#include <hal/physmem_manager.h>
-#include <hal/virtmem_manager.h>
 #include <drivers/fdc.h>
 #include <drivers/keyboard.h>
 #include <boot_info.h>
-
-//============================================================================
-//    IMPLEMENTATION PRIVATE DATA
-//============================================================================
-
-const char logo[] = 
-"\
-                 _   _            _      \n\
-                | \\ | | _____   _(_)_  __\n\
-                |  \\| |/ _ \\ \\ / / \\ \\/ /\n\
-                | |\\  | (_) \\ V /| |>  < \n\
-                |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
-";
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTIONS
@@ -47,17 +34,22 @@ void __attribute__((cdecl)) start(Boot_info* info)
 {
     clr();
 
-    printf("%s", logo);
-
     HAL_initialize(info);
     FDC_initialize();
     KEYBOARD_initialize();
 
-    char c;
     while(1)
     {
-        c = getchar();
-        printf("%c", c);
+        puts("root@host> ");
+
+        //reading
+        shellRead();
+
+        //parsing
+        shellParse();
+        
+        //execute
+        shellExecute();
     }
 
 end:

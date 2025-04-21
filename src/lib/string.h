@@ -17,14 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "ctype.h"
 
-bool islower(char chr)
-{
-    return chr >= 'a' && chr <= 'z';
-}
 
-char toupper(char chr)
-{
-    return islower(chr) ? (chr - 'a' + 'A') : chr;
-}
+#pragma once
+
+const char* strchr(const char* str, char chr);
+char* strcpy(char* dst, const char* src);
+unsigned strlen(const char* str);
+int strcmp(char *str1, char *str2);
+long strtol(char* start, char** end, int base);

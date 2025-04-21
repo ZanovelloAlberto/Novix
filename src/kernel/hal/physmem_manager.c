@@ -173,10 +173,10 @@ void PHYSMEM_initialize(Boot_info* info)
 {
     uint32_t block;
 
-    printf("initializing physical memory manager...\n\r");
+    puts("initializing physical memory manager...\n\r");
     if(PHYSMEM_initData(info) == 0)
     {
-        printf("Physical Memory manager initialize failed !\n\r");
+        puts("Physical Memory manager initialize failed !\n\r");
         return;
     }
 
@@ -220,7 +220,7 @@ void PHYSMEM_initialize(Boot_info* info)
             totalUsedBlock++;
     }
 
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 void* PHYSMEM_AllocBlock()
@@ -268,7 +268,6 @@ void* PHYSMEM_AllocBlocks(uint8_t block_size)
         index++;
         if(PHYSMEM_checkIfBlockUsed(index))
         {
-            debug++;
             count = 1;
             index = PHYSMEM_firstFreeBlockFrom(index);
             block_addr = index;
@@ -277,7 +276,6 @@ void* PHYSMEM_AllocBlocks(uint8_t block_size)
         count++;
     }
     
-    printf("debug: %d, count: %d, index: %d\n", debug, count, index);
     return NULL;
 }
 

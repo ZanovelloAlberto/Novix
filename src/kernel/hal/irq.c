@@ -69,7 +69,7 @@ void IRQ_initialize()
     PIC_configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
     PIT_initialize();
 
-    printf("initilazing IRQ ...\n\r");
+    puts("initilazing IRQ ...\n\r");
 
     for(int i = 0; i < 16; i++)
         ISR_registerNewHandler(PIC_REMAP_OFFSET + i, IRQ_handler);
@@ -79,7 +79,7 @@ void IRQ_initialize()
 
     // enable interrupts
     enableInterrupts();
-    printf("Done !\n\r");
+    puts("Done !\n\r");
 }
 
 void IRQ_registerNewHandler(int irq, IRQHandler handler)
