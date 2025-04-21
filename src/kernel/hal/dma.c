@@ -91,7 +91,7 @@ typedef enum {
 typedef enum {
     DMA_COMMAND_MASK_MEMTOMEM       = 0x01,
     DMA_COMMAND_MASK_CHAN0ADDRHOLD  = 0x02,
-    DMA_COMMAND_MASK_ENABLE         = 0x04,
+    DMA_COMMAND_MASK_DISABLE        = 0x04,
     DMA_COMMAND_MASK_TIMING         = 0x08,
     DMA_COMMAND_MASK_PRIORITY       = 0x10,
     DMA_COMMAND_MASK_WRITESELECTION = 0x20,
@@ -105,12 +105,12 @@ typedef enum {
 
 void DMA_enable()
 {
-    outb(MASTER_DMA_PORT_COMMAND_REG, DMA_COMMAND_MASK_ENABLE);
+    outb(MASTER_DMA_PORT_COMMAND_REG, 0x0);
 }
 
 void DMA_disable()
 {
-    outb(MASTER_DMA_PORT_COMMAND_REG, 0x0);
+    outb(MASTER_DMA_PORT_COMMAND_REG, DMA_COMMAND_MASK_DISABLE);
 }
 
 void DMA_resetFlipFlop(bool is_master_dma)
