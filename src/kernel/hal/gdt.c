@@ -123,7 +123,11 @@ void __attribute__((cdecl)) GDT_flush(Gdt_descriptor* descriptor);
 
 void GDT_initilize()
 {
-    puts("Initializing the GDT...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tInitializing the GDT...");
+
     GDT_flush(&g_GDTdescriptor);
-    puts("Done !\n\r");
+
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

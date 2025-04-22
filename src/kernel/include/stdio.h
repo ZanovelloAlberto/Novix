@@ -25,11 +25,24 @@
 //    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
 //============================================================================
 
-#define COLOR8_BLACK 0
-#define COLOR8_LIGHT_GREY 7
-
-#define WIDTH 80
-#define HEIGHT 25
+typedef enum {
+    VGA_COLOR_BLACK         = 0,
+    VGA_COLOR_BLUE          = 1,
+    VGA_COLOR_GREEN         = 2,
+    VGA_COLOR_CYAN          = 3,
+    VGA_COLOR_RED           = 4,
+    VGA_COLOR_MAGENTA       = 5,
+    VGA_COLOR_BROWN         = 6,
+    VGA_COLOR_LIGHT_GREY    = 7,
+    VGA_COLOR_DARK_GREY     = 8,
+    VGA_COLOR_LIGHT_BLUE    = 9,
+    VGA_COLOR_LIGHT_GREEN   = 10,
+    VGA_COLOR_LIGHT_CYAN    = 11,
+    VGA_COLOR_LIGHT_RED     = 12,
+    VGA_COLOR_LIGHT_MAGENTA = 13,
+    VGA_COLOR_YELLOW        = 14,
+    VGA_COLOR_WHITE         = 15
+}VGA_COLOR;
 
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
@@ -38,9 +51,15 @@
 char getchar();
 KEYCODE waitForKeyPress();
 void puts(const char* s);
+void colored_puts(const char* s, VGA_COLOR foreground);
 void putc(const char s);
 void printf(const char* fmt, ...);
 void scrollUp();
 void newLine();
+void setCurrentColor(VGA_COLOR foreground);
+void setColorToDefault();
+void moveCursorTo(uint16_t new_line, uint16_t new_column);
+uint16_t getCurrentLine();
+uint16_t getCurrentColumn();
 void clr();
 void updateCursor();

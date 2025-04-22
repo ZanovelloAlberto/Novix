@@ -104,9 +104,13 @@ void ISR_handler(Registers* regs)
 
 void ISR_initialze()
 {
-    puts("Initializing ISR...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tInitializing ISR...");
+
     ISR_initializeGates();
-    puts("Done !\n\r");
+
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void ISR_registerNewHandler(int interrupt, ISRHandler handler)

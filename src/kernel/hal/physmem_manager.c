@@ -77,6 +77,9 @@ int PHYSMEM_initData(Boot_info* info)
     totalBlockNumber = roundUp_div(info->memorySize, BLOCK_SIZEKB);
     bitmapSize = roundUp_div(totalBlockNumber, BLOCK_PER_BYTE);
 
+    // initialy we mark the whole memory as used
+    memset(bitmap, 0b11111111, bitmapSize);
+
     // here we are trying to find a free block of memory for the bitmap
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
@@ -101,9 +104,6 @@ Found:
 
     // the memory map to the 4kb size array
     memcpy(&g_memory4KbEntries, info->memoryBlockEntries, MAX_MEMORY_ENTRY);
-
-    // initialy we mark the whole memory as used
-    memset(bitmap, 0b11111111, bitmapSize);
 
     return 1;
 }
@@ -173,10 +173,13 @@ void PHYSMEM_initialize(Boot_info* info)
 {
     uint32_t block;
 
-    puts("initializing physical memory manager...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tInitializing physical memory manager...");
+
     if(PHYSMEM_initData(info) == 0)
     {
-        puts("Physical Memory manager initialize failed !\n\r");
+        moveCursorTo(getCurrentLine(), 60);
+        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
         return;
     }
 
@@ -220,7 +223,8 @@ void PHYSMEM_initialize(Boot_info* info)
             totalUsedBlock++;
     }
 
-    puts("Done !\n\r");
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void* PHYSMEM_AllocBlock()

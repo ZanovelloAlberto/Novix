@@ -69,7 +69,8 @@ void IRQ_initialize()
     PIC_configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
     PIT_initialize();
 
-    puts("initilazing IRQ ...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tInitialazing IRQ ...");
 
     for(int i = 0; i < 16; i++)
         ISR_registerNewHandler(PIC_REMAP_OFFSET + i, IRQ_handler);
@@ -79,7 +80,9 @@ void IRQ_initialize()
 
     // enable interrupts
     enableInterrupts();
-    puts("Done !\n\r");
+    
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void IRQ_registerNewHandler(int irq, IRQHandler handler)

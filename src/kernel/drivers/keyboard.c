@@ -282,14 +282,17 @@ KEYCODE KEYBOARD_getLastKey()
 
 void KEYBOARD_initialize()
 {
-    puts("initializing Keyboard...\n\r");
+    colored_puts("[DRIVER]", VGA_COLOR_LIGHT_CYAN);
+    puts("\tInitializing Keyboard...");
 
     disableInterrupts();
     KEYBOARD_enable(); // just in case !
 
     if(!KEYBOARD_selfTest() || !KEYBOARD_interfaceTest())
     {
-        puts("keyboard initialization failed");
+        moveCursorTo(getCurrentLine(), 60);
+        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
+
         KEYBOARD_disable();
         return;
     }
@@ -300,7 +303,8 @@ void KEYBOARD_initialize()
     IRQ_registerNewHandler(1, (IRQHandler)KEYBOARD_interruptHandler);
     enableInterrupts();
 
-    puts("Done !\n\r");
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 char KEYBOARD_scanToAscii(uint8_t scancode)

@@ -27,20 +27,38 @@
 #include <boot_info.h>
 
 //============================================================================
+//    IMPLEMENTATION PRIVATE DATA
+//============================================================================
+
+volatile const char logo[] = 
+"\
+                         _   _            _      \n\
+                        | \\ | | _____   _(_)_  __\n\
+                        |  \\| |/ _ \\ \\ / / \\ \\/ /\n\
+                        | |\\  | (_) \\ V /| |>  < \n\
+                        |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
+";
+
+//============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTIONS
 //============================================================================
 
 void __attribute__((cdecl)) start(Boot_info* info)
 {
     clr();
+    printf("%s", logo);
 
     HAL_initialize(info);
     FDC_initialize();
     KEYBOARD_initialize();
 
+    putc('\n');
+
     while(1)
     {
+        setCurrentColor(VGA_COLOR_WHITE);
         puts("root@host> ");
+        setColorToDefault();
 
         //reading
         shellRead();

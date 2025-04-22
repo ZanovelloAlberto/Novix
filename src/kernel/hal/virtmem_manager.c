@@ -105,7 +105,8 @@ void VIRTMEM_mapPage (void* virt)
 
 void VIRTMEM_initialize()
 {
-    puts("initializing virtual memory manager...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tInitializing virtual memory manager...");
 
     // allocate default page directory table
     PDE* page_directory = PHYSMEM_AllocBlock();
@@ -118,7 +119,8 @@ void VIRTMEM_initialize()
 
     if(page_directory == NULL || table_0 == NULL || table_768 == NULL)
     {
-        puts("Virtual Memory manager initialize failed !\n\r");
+        moveCursorTo(getCurrentLine(), 60);
+        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
         return;
     }
 
@@ -158,5 +160,7 @@ void VIRTMEM_initialize()
 
     switchPDBR(page_directory);
     enablePaging();    // just in case ...
-    puts("Done !\n\r");
+
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

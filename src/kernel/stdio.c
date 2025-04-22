@@ -25,13 +25,21 @@
 #include <stdbool.h>
 
 //============================================================================
+//    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
+//============================================================================
+
+#define WIDTH 80
+#define HEIGHT 25
+
+//============================================================================
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
 
 uint16_t column = 0;
 uint16_t line = 0;
 uint16_t* const vga = (uint16_t* const) 0xB8000;
-const uint16_t defaultColor = (COLOR8_LIGHT_GREY << 8) | (COLOR8_BLACK << 12);
+const VGA_COLOR background = VGA_COLOR_BLACK;
+const uint16_t defaultColor = (VGA_COLOR_LIGHT_GREY << 8) | (background << 12);
 
 uint16_t currentColor = defaultColor;
 const char g_HexChars[] = "0123456789abcdef";
@@ -128,6 +136,36 @@ KEYCODE waitForKeyPress()
 	return key;
 }
 
+void setCurrentColor(VGA_COLOR foreground)
+{
+    currentColor = (foreground << 8) | (background << 12);
+}
+
+void setColorToDefault()
+{
+    currentColor = defaultColor;
+}
+
+void moveCursorTo(uint16_t new_line, uint16_t new_column)
+{
+    if(new_line >= HEIGHT || new_column >= WIDTH)
+        return;
+
+    line = new_line;
+    column = new_column;
+    updateCursor();
+}
+
+uint16_t getCurrentLine()
+{
+    return line;
+}
+
+uint16_t getCurrentColumn()
+{
+    return column;
+}
+
 /** clr:
 * clear the screen with the defaut color and update the cursor
 */
@@ -157,6 +195,13 @@ void puts(const char* s)
         s++;
         updateCursor();
     }
+}
+
+void colored_puts(const char* s, VGA_COLOR foreground)
+{
+    setCurrentColor(foreground);
+    puts(s);
+    setColorToDefault();
 }
 
 /** putc:

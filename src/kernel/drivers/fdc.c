@@ -114,7 +114,7 @@ typedef enum {
 
 bool g_irqFired = false;
 uint8_t g_currentDrive = 0;
-uint32_t* fdc_buffer;
+uint32_t* fdc_buffer = NULL;
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTION PROTOTYPES
@@ -457,12 +457,17 @@ uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
 
 void FDC_initialize()
 {
-    puts("Initializing FDC...\n");
+    colored_puts("[DRIVER]", VGA_COLOR_LIGHT_CYAN);
+    puts("\tInitializing FDC...");
+
     fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 
     if(fdc_buffer == NULL)
     {
-        puts("FDC initialize failed !\n");
+        setCurrentColor(VGA_COLOR_LIGHT_RED);
+        moveCursorTo(getCurrentLine(), 60);
+        puts("[Failed]\n\r");
+        setColorToDefault();
         return;
     }
 
@@ -473,5 +478,6 @@ void FDC_initialize()
     FDC_setCurrentDrive(0x0);
     FDC_resetController();
     
-    puts("Done !\n");
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

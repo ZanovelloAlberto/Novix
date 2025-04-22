@@ -80,7 +80,8 @@ enum {
 
 void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
 {
-    puts("Configuring PIC...\n\r");
+    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
+    puts("\t\tConfiguring PIC...");
 
     // initialization control word 1
     outb(PIC1_COMMAND_PORT, PIC_ICW1_ICW4 | PIC_ICW1_INITIALIZE);
@@ -112,7 +113,8 @@ void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
     outb(PIC2_DATA_PORT, 0);
     iowait();
 
-    puts("Done !\n\r");
+    moveCursorTo(getCurrentLine(), 60);
+    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void PIC_sendEndOfInterrupt(int irq)

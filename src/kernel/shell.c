@@ -44,15 +44,6 @@ typedef enum {
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
 
-volatile const char logo[] = 
-"\
-                 _   _            _      \n\
-                | \\ | | _____   _(_)_  __\n\
-                |  \\| |/ _ \\ \\ / / \\ \\/ /\n\
-                | |\\  | (_) \\ V /| |>  < \n\
-                |_| \\_|\\___/ \\_/ |_/_/\\_\\ \n\n\
-";
-
 char prompt[MAX_CHAR_PROMPT];
 char* args[MAX_CMD_ARGS];
 int argc;
@@ -190,7 +181,7 @@ void shellParse()
             case '"':
                 quoteFlag = true;
                 quoteFlagState = WAIT_FOR_DOUBLE_QUOTE;
-                promptShift(end, 1);    // delete that character
+                promptShift(end, 1);    // get rid of that character
                 break;
 
             case '\'':
@@ -265,14 +256,28 @@ void shellExecute()
 
 void helpCommand(int argc, char** argv)
 {
-    printf("%s", logo);
     putc('\n');
 
-    puts("Supported command:\n");
-    puts(" - help: display this message\n");
-    puts(" - clear: clear the screen\n");
-    puts(" - exit: halt the system (forever)\n");
-    puts(" - dumpsector: read a sector on disk and display the content\n");
+    puts("  command");
+    moveCursorTo(getCurrentLine(), 27);
+    puts("description\n");
+    puts("------------------------------------------------------------------------------\n");
+
+    colored_puts(" - help", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": display this message\n");
+
+    colored_puts(" - clear", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": clear the screen\n");
+
+    colored_puts(" - exit", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": halt the system (forever)\n");
+
+    colored_puts(" - dumpsector", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": read a sector on disk and display the content\n");
 }
 
 void dumpsectorCommand(int argc, char** argv)
