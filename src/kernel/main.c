@@ -56,9 +56,7 @@ void __attribute__((cdecl)) start(Boot_info* info)
 
     while(1)
     {
-        setCurrentColor(VGA_COLOR_WHITE);
-        puts("root@host> ");
-        setColorToDefault();
+        colored_puts("root@host> ", VGA_COLOR_WHITE);
 
         //reading
         shellRead();

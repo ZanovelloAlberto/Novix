@@ -238,7 +238,7 @@ void shellParse()
 
 void helpCommand(int argc, char** argv);
 void dumpsectorCommand(int argc, char** argv);
-void allocheapCommand(int argc, char** argv);
+void heaptestCommand(int argc, char** argv);
 void shellExecute()
 {
     
@@ -250,8 +250,8 @@ void shellExecute()
         panic();
     else if(strcmp(prompt, "dumpsector") == 0)
         dumpsectorCommand(argc, args);
-    else if(strcmp(prompt, "allocheap") == 0)
-        allocheapCommand(argc, args);
+    else if(strcmp(prompt, "heaptest") == 0)
+        heaptestCommand(argc, args);
     else
         printf("%s: Unknown command", prompt);
 
@@ -284,21 +284,9 @@ void helpCommand(int argc, char** argv)
     puts(": read a sector on disk and display the content\n");
 }
 
-void allocheapCommand(int argc, char** argv)
+void heaptestCommand(int argc, char** argv)
 {
-    void* ptr;
-
-    if(argc > 2 || argc < 2)
-    {
-        puts("Usage: allocheap <size>");
-        return;
-    }
-
-    ptr = kmalloc(strtol(argv[1], NULL, 0));
-    printf("1. ptr allocated at 0x%x\n", ptr);
-
-    ptr = kmalloc(strtol(argv[1], NULL, 0));
-    printf("2. ptr allocated at 0x%x", ptr);
+    heapTest();
 }
 
 void dumpsectorCommand(int argc, char** argv)

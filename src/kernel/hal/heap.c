@@ -18,6 +18,7 @@
 */
 
 #include <stdio.h>
+#include <memory.h>
 #include <hal/virtmem_manager.h>
 #include <hal/heap.h>
 
@@ -88,7 +89,7 @@ void HEAP_initialize()
     colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
-void* sbrk(size_t size)
+void* sbrk(long size)
 {
     void* ptr = brk;
 
@@ -161,4 +162,130 @@ void* kmalloc(size_t size)
     block += sizeof(header_t);
 
     return block;
+}
+
+void* krealloc(void* block, size_t size)
+{
+    header_t* header = block - sizeof(header_t);
+    void* newBlock;
+
+    if(header->size >= size)
+        return block;
+
+    newBlock = kmalloc(size);
+    if(!newBlock)
+        return NULL;
+
+    memcpy(newBlock, block, header->size);
+    kfree(block);
+
+    return newBlock;
+}
+
+void* kcalloc(size_t num, size_t size)
+{
+    size_t totalSize = num * size;
+
+    if(!num || !size)
+        return NULL;
+
+    if(num != totalSize / size) // check mul overflow 
+        return NULL;
+
+    void* pointer = kmalloc(totalSize);
+    if(!pointer)
+        return NULL;
+
+    memset(pointer, 0, totalSize);
+    
+    return pointer;
+}
+
+void kfree(void* block)
+{
+    header_t *header = (header_t*)(block - sizeof(header_t));
+    size_t totalSize = sizeof(header_t) + header->size;
+
+    // if it's the last block we need to release the memory to the OS
+    if(header == tail)      //(block + header->size) == sbrk(0)
+    {
+        if(tail == head)    // if it's the first element in the linked list
+        {
+            tail = NULL;
+            head = NULL;
+            sbrk(-1 * totalSize);
+        }else{
+            header_t *tempTail = head;
+            while(tempTail->next != tail)
+                tempTail = tempTail->next;
+
+            tail = tempTail;
+            tail->next = NULL;
+
+            sbrk(-1 * totalSize);
+        }
+    }else{  // set the block to free
+        header->isFree = 1;
+        // TODO: implement a merging block mechanism
+    }
+}
+
+void heapTest()
+{
+    colored_puts("allocating 3 blocks:\n", VGA_COLOR_LIGHT_RED);
+    int* test = kmalloc(sizeof(int) * 5);
+    int* test0 = kmalloc(sizeof(int) * 10);
+    int* test1 = kmalloc(sizeof(int) * 15);
+
+    header_t *temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    colored_puts("freeing a block in the middle:\n", VGA_COLOR_LIGHT_RED);
+    kfree(test0); // freeing a block in the middle
+
+    temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    colored_puts("realloc the first block using krealloc:\n", VGA_COLOR_LIGHT_RED);
+    test = krealloc(test, sizeof(int) * 7);   // realloc the first block using krealloc
+
+    temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    colored_puts("freeing the last block:\n", VGA_COLOR_LIGHT_RED);
+    kfree(test1);     // freeing the last block
+
+    temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
+
+    colored_puts("using kcalloc:\n", VGA_COLOR_LIGHT_RED);
+    test1 = kcalloc(20, sizeof(int)); // using kcalloc
+
+    temp = head;
+
+    while(temp != NULL)
+    {
+        printf("size: %ld, isfree: %d\n",temp->size, temp->isFree);
+        temp = temp->next;
+    }
 }
