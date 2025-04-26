@@ -17,16 +17,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
-#include <stdint.h>
-#include <stdbool.h>
+#include <stddef.h>
 
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
 //============================================================================
 
-void __attribute__((cdecl)) enablePaging();
-void __attribute__((cdecl)) flushTLB(uint32_t* virtual_addr);
-void* __attribute__((cdecl)) getPDBR();
-void __attribute__((cdecl)) switchPDBR(uint32_t* physical_addr);
+void HEAP_initialize();
+void* sbrk(size_t size);
+void* kmalloc(size_t size);

@@ -34,6 +34,6 @@ typedef uint32_t PTE;
 //============================================================================
 
 void VIRTMEM_initialize();
-void VIRTMEM_mapPage (void* virt);
+bool VIRTMEM_mapPage (void* virt);
 void VIRTMEM_freePage(PTE* entry);
-int VIRTMEM_allocPage(PTE* entry, uint32_t flags);
+bool VIRTMEM_allocPage(PTE* entry, uint32_t flags);

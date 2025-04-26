@@ -57,15 +57,15 @@ typedef enum {
 //    INTERFACE FUNCTIONS
 //============================================================================
 
-int VIRTMEM_allocPage(PTE* entry, uint32_t flags)
+bool VIRTMEM_allocPage(PTE* entry, uint32_t flags)
 {
     PTE page = (PTE)PHYSMEM_AllocBlock(); // allocate a free physical frame
     if(!page)
-        return 0;
+        return false;
 
     *entry = PAGE_ADD_ATTRIBUTE(page, flags);
 
-    return 1;
+    return true;
 }
 
 void VIRTMEM_freePage(PTE* entry)
@@ -76,12 +76,12 @@ void VIRTMEM_freePage(PTE* entry)
     *entry = 0x0; // page not present
 }
 
-void VIRTMEM_mapPage (void* virt)
+bool VIRTMEM_mapPage (void* virt)
 {
     if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
-        return;
+        return false;
 
-    PDE* page_directory = (PDE*)0xFFFFF000; // virtuall addresse of the page directory
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
     
     uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
     PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
@@ -90,7 +90,7 @@ void VIRTMEM_mapPage (void* virt)
     {
         void* frame = PHYSMEM_AllocBlock(); // physical address of the page table
         if(!frame)
-            return;
+            return false;
 
         page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
         memset(page_table, 0, 0x1000);
@@ -98,9 +98,13 @@ void VIRTMEM_mapPage (void* virt)
 
     uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
     if((page_table[pageEntryIndex] & PTE_PAGE_PRESENT) == PTE_PAGE_PRESENT)
-        return; // page already mapped nothing to do
+        return true; // page already mapped nothing to do
 
-    VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE);
+    if(!VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE))
+        return false;
+    
+    flushTLB(virt);
+    return true;
 }
 
 void VIRTMEM_initialize()

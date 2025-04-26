@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <hal/io.h>
 #include <hal/pit.h>
+#include <hal/heap.h>
 #include <drivers/fdc.h>
 #include <memory.h>
 #include <string.h>
@@ -237,6 +238,7 @@ void shellParse()
 
 void helpCommand(int argc, char** argv);
 void dumpsectorCommand(int argc, char** argv);
+void allocheapCommand(int argc, char** argv);
 void shellExecute()
 {
     
@@ -248,6 +250,8 @@ void shellExecute()
         panic();
     else if(strcmp(prompt, "dumpsector") == 0)
         dumpsectorCommand(argc, args);
+    else if(strcmp(prompt, "allocheap") == 0)
+        allocheapCommand(argc, args);
     else
         printf("%s: Unknown command", prompt);
 
@@ -278,6 +282,23 @@ void helpCommand(int argc, char** argv)
     colored_puts(" - dumpsector", VGA_COLOR_LIGHT_CYAN);
     moveCursorTo(getCurrentLine(), 25);
     puts(": read a sector on disk and display the content\n");
+}
+
+void allocheapCommand(int argc, char** argv)
+{
+    void* ptr;
+
+    if(argc > 2 || argc < 2)
+    {
+        puts("Usage: allocheap <size>");
+        return;
+    }
+
+    ptr = kmalloc(strtol(argv[1], NULL, 0));
+    printf("1. ptr allocated at 0x%x\n", ptr);
+
+    ptr = kmalloc(strtol(argv[1], NULL, 0));
+    printf("2. ptr allocated at 0x%x", ptr);
 }
 
 void dumpsectorCommand(int argc, char** argv)
