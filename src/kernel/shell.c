@@ -282,6 +282,10 @@ void helpCommand(int argc, char** argv)
     colored_puts(" - dumpsector", VGA_COLOR_LIGHT_CYAN);
     moveCursorTo(getCurrentLine(), 25);
     puts(": read a sector on disk and display the content\n");
+
+    colored_puts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": perfom small test to the heap\n");
 }
 
 void heaptestCommand(int argc, char** argv)

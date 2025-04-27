@@ -25,7 +25,7 @@
 //============================================================================
 
 void HEAP_initialize();
-void* sbrk(long size);
+void* sbrk(intptr_t size);
 void* kmalloc(size_t size);
 void* krealloc(void* block, size_t size);
 void* kcalloc(size_t num, size_t size);
