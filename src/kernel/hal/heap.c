@@ -164,20 +164,17 @@ void* kmalloc(size_t size)
 
             //filling new header information
             newHeader->size = header->size - size - sizeof(header_t);
-            newHeader->isFree = true;
+            newHeader->isFree = false;
             newHeader->back = header;
-            newHeader->next = NULL;
+            newHeader->next = header->next;
 
             if(header->next != NULL)
-            {
-                newHeader->next = header->next;
                 header->next->back = newHeader;
-            }
-
-            insert_ordered_array(newHeader, &freeBlockArray); // add a new free block !
 
             header->next = newHeader;
             header->size = size;
+
+            kfree((void*)newHeader + sizeof(header_t)); // add a new free block !
 
             if(header == tail)
                 tail = newHeader;
@@ -257,14 +254,14 @@ void kfree(void* block)
     header_t *header = (header_t*)(block - sizeof(header_t));
     size_t totalSize = 0;
 
-    header->isFree = true;
-    insert_ordered_array((type_t)header, &freeBlockArray);
+    if(header->isFree)
+        return; // nothing to do
 
     // merging left block if it's free
     left_block = header->back;
     if(left_block != NULL && left_block->isFree)
     {
-        remove_ordered_array(getIndex_ordered_array(header, &freeBlockArray), &freeBlockArray);
+        remove_ordered_array(getIndex_ordered_array(left_block, &freeBlockArray), &freeBlockArray);
 
         left_block->size += header->size + sizeof(header_t);
         left_block->next = header->next;
@@ -294,6 +291,9 @@ void kfree(void* block)
             tail = header;      // the last block become the left one in this case the header
     }
 
+    header->isFree = true;
+    insert_ordered_array((type_t)header, &freeBlockArray);
+
     totalSize = sizeof(header_t) + header->size;
 
     // if it's the last block we need to release the memory to the OS
@@ -301,7 +301,7 @@ void kfree(void* block)
     {
         if(tail == head)    // if it's the first element in the linked list
         {
-            tail = NULL;    // erase the actuel linked list
+            tail = NULL;    // erase the actual linked list
             head = NULL;
             sbrk(-1 * totalSize);
         }
@@ -320,15 +320,15 @@ void kfree(void* block)
 void heapTest()
 {
     colored_puts("allocating 3 blocks:\n", VGA_COLOR_LIGHT_RED);
-    int* test = kmalloc(sizeof(int) * 5);
+    int* test = kmalloc(sizeof(int) * 15);
     int* test0 = kmalloc(sizeof(int) * 10);
-    int* test1 = kmalloc(sizeof(int) * 15);
+    int* test1 = kmalloc(sizeof(int) * 5);
 
     header_t *temp = head;
 
     while(temp != NULL)
     {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, (temp+sizeof(header_t)));
+        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
         temp = temp->next;
     }
 
@@ -339,40 +339,40 @@ void heapTest()
 
     while(temp != NULL)
     {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, (temp+sizeof(header_t)));
+        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
         temp = temp->next;
     }
 
-    colored_puts("freeing a block to perform merge:\n", VGA_COLOR_LIGHT_RED);
+    colored_puts("freeing a block to perform a merge:\n", VGA_COLOR_LIGHT_RED);
     kfree(test); // freeing the first block
 
     temp = head;
 
     while(temp != NULL)
     {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, (temp+sizeof(header_t)));
+        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
         temp = temp->next;
     }
 
-    colored_puts("allocating block to perform a split:\n", VGA_COLOR_LIGHT_RED);
+    colored_puts("allocating a block to perform a split:\n", VGA_COLOR_LIGHT_RED);
     test0 = kmalloc(sizeof(int) * 10); // using kmalloc
 
     temp = head;
 
     while(temp != NULL)
     {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, (temp+sizeof(header_t)));
+        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
         temp = temp->next;
     }
 
-    colored_puts("freeing the last block:\n", VGA_COLOR_LIGHT_RED);
+    colored_puts("freeing the last block (to merge and release memory):\n", VGA_COLOR_LIGHT_RED);
     kfree(test1);     // freeing the last block
 
     temp = head;
 
     while(temp != NULL)
     {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, (temp+sizeof(header_t)));
+        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
         temp = temp->next;
     }
 
