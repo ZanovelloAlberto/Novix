@@ -17,24 +17,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-
-#pragma once
-#include <stdint.h>
-#include <stdbool.h>
-
-//============================================================================
-//    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
-
-typedef uint32_t PDE;
-typedef uint32_t PTE;
+#include <stddef.h>
 
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
 //============================================================================
 
-void VIRTMEM_initialize();
-bool VIRTMEM_mapPage (void* virt);
-bool VIRTMEM_unMapPage (void* virt);
-void VIRTMEM_freePage(PTE* entry);
-bool VIRTMEM_allocPage(PTE* entry, uint32_t flags);
+void VMALLOC_initialize();
+void* vmalloc(size_t size);
+void vfree(void* ptr);

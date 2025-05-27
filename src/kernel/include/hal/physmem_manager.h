@@ -20,6 +20,17 @@
 #pragma once
 #include <boot_info.h>
 #include <stdbool.h>
+//============================================================================
+//    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
+//============================================================================
+
+typedef struct physmem_info
+{
+    uint32_t bitmapSize;
+    uint32_t totalBlockNumber;
+    uint32_t totalUsedBlock;
+    uint32_t totalFreeBlock;
+}physmem_info_t;
 
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
@@ -30,4 +41,4 @@ void PHYSMEM_freeBlock(void* ptr);
 void* PHYSMEM_AllocBlock();
 void* PHYSMEM_AllocBlocks(uint8_t blocks);
 void PHYSMEM_freeBlocks(void* ptr, uint8_t size);
-void PHYSMEM_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut);
+void PHYSMEM_getMemoryInfo(physmem_info_t* info);

@@ -77,9 +77,6 @@ int PHYSMEM_initData(Boot_info* info)
     totalBlockNumber = roundUp_div(info->memorySize, BLOCK_SIZEKB);
     bitmapSize = roundUp_div(totalBlockNumber, BLOCK_PER_BYTE);
 
-    // initialy we mark the whole memory as used
-    memset(bitmap, 0b11111111, bitmapSize);
-
     // here we are trying to find a free block of memory for the bitmap
     for(int i = 0; i < info->memoryBlockCount; i++)
     {
@@ -94,6 +91,9 @@ int PHYSMEM_initData(Boot_info* info)
 
 Found:
     bitmap = (uint8_t*)base;
+
+    // initialy we mark the whole memory as used
+    memset(bitmap, 0b11111111, bitmapSize);
 
     // we need to add a new reserved region to our memory map 
     info->memoryBlockEntries[info->memoryBlockCount].base = base;
@@ -126,16 +126,25 @@ void PHYSMEM_memoryMapToBlock(uint32_t memoryBlockCount)
 
 void PHYSMEM_setBlockToFree(uint32_t block)
 {
+    if(block > totalBlockNumber)
+        return;
+    
     bitmap[block / 8] ^= (1 << block % 8);
 }
 
 void PHYSMEM_setBlockToUsed(int block)
 {
+    if(block > totalBlockNumber)
+        return;
+    
     bitmap[block / 8] |= (1 << block % 8);
 }
 
 uint8_t PHYSMEM_checkIfBlockUsed(int block)
 {
+    if(block > totalBlockNumber)
+        return 1;
+    
     return bitmap[block / 8] & (1 << block % 8);
 }
 
@@ -161,12 +170,12 @@ uint32_t PHYSMEM_firstFreeBlockFrom(uint32_t position)
 //    INTERFACE FUNCTIONS
 //============================================================================
 
-void PHYSMEM_getMemoryInfo(uint32_t* bitmapSizeOut, uint32_t* totalBlockNumberOut, uint32_t* totalFreeBlockOut, uint32_t* totalUsedBlockOut)
+void PHYSMEM_getMemoryInfo(physmem_info_t* info)
 {
-    *bitmapSizeOut = bitmapSize;
-    *totalBlockNumberOut = totalBlockNumber;
-    *totalUsedBlockOut = totalUsedBlock;
-    *totalFreeBlockOut = totalFreeBlock;
+    info->bitmapSize = bitmapSize;
+    info->totalBlockNumber = totalBlockNumber;
+    info->totalUsedBlock = totalUsedBlock;
+    info->totalFreeBlock = totalFreeBlock;
 }
 
 void PHYSMEM_initialize(Boot_info* info)

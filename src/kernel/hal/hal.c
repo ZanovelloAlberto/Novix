@@ -24,7 +24,8 @@
 #include <hal/irq.h>
 #include <hal/physmem_manager.h>
 #include <hal/virtmem_manager.h>
-#include<hal/heap.h>
+#include <hal/heap.h>
+#include <hal/vmalloc.h>
 #include <hal/dma.h>
 
 //============================================================================
@@ -40,5 +41,6 @@ void HAL_initialize(Boot_info* info)
     PHYSMEM_initialize(info);
     VIRTMEM_initialize();
     HEAP_initialize();
+    VMALLOC_initialize();
     DMA_enable();
 }

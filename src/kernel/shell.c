@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <hal/io.h>
 #include <hal/pit.h>
+#include <hal/physmem_manager.h>
 #include <hal/heap.h>
 #include <drivers/fdc.h>
 #include <memory.h>
@@ -238,6 +239,7 @@ void shellParse()
 
 void helpCommand(int argc, char** argv);
 void dumpsectorCommand(int argc, char** argv);
+void physmeminfoCommand(int argc, char** argv);
 void heaptestCommand(int argc, char** argv);
 void shellExecute()
 {
@@ -252,6 +254,8 @@ void shellExecute()
         dumpsectorCommand(argc, args);
     else if(strcmp(prompt, "heaptest") == 0)
         heaptestCommand(argc, args);
+    else if(strcmp(prompt, "physmeminfo") == 0)
+        physmeminfoCommand(argc, args);
     else
         printf("%s: Unknown command", prompt);
 
@@ -283,6 +287,10 @@ void helpCommand(int argc, char** argv)
     moveCursorTo(getCurrentLine(), 25);
     puts(": read a sector on disk and display the content\n");
 
+    colored_puts(" - physmeminfo", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": physical memory manager information\n");
+
     colored_puts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
     moveCursorTo(getCurrentLine(), 25);
     puts(": perfom small test to the heap\n");
@@ -291,6 +299,18 @@ void helpCommand(int argc, char** argv)
 void heaptestCommand(int argc, char** argv)
 {
     heapTest();
+}
+
+void physmeminfoCommand(int argc, char** argv)
+{
+    physmem_info_t info;
+
+    PHYSMEM_getMemoryInfo(&info);
+
+    printf("bitmap size: %d\n", info.bitmapSize);
+    printf("total block number: %d\n", info.totalBlockNumber);
+    printf("total free block: %d\n", info.totalFreeBlock);
+    printf("total used block: %d\n", info.totalUsedBlock);
 }
 
 void dumpsectorCommand(int argc, char** argv)

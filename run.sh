@@ -1,1 +1,1 @@
-qemu-system-i386 -fda build/main.img
+qemu-system-i386 -m 64M -fda build/main.img

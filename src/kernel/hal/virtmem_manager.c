@@ -70,7 +70,7 @@ bool VIRTMEM_allocPage(PTE* entry, uint32_t flags)
 
 void VIRTMEM_freePage(PTE* entry)
 {
-    void* ptr = (void*)(*entry & 0xFFF00000);
+    void* ptr = (void*)(*entry & 0xFFFFF000);
     PHYSMEM_freeBlock(ptr);
 
     *entry = 0x0; // page not present
@@ -102,6 +102,29 @@ bool VIRTMEM_mapPage (void* virt)
 
     if(!VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE))
         return false;
+    
+    flushTLB(virt);
+    return true;
+}
+
+bool VIRTMEM_unMapPage (void* virt)
+{
+    if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
+        return false;
+
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
+
+    if((page_directory[pageTableIndex] & PDE_PRESENT) != PDE_PRESENT)
+        return true;    // already unmapped
+
+    uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
+    if((page_table[pageEntryIndex] & PTE_PAGE_PRESENT) != PTE_PAGE_PRESENT)
+        return true; // page already unmapped nothing to do
+
+    VIRTMEM_freePage(&page_table[pageEntryIndex]);
     
     flushTLB(virt);
     return true;

@@ -28,7 +28,7 @@
 //============================================================================
 
 #define HEAP_START_ADDR 0xD0000000
-#define HEAP_END_ADDR   0xDFFFFFFF
+#define HEAP_END_ADDR   0xD7FFFFFF
 
 #define PAGE_SIZE 0x1000
 
@@ -213,6 +213,9 @@ void* kmalloc(size_t size)
 
 void* krealloc(void* block, size_t size)
 {
+    if(block == NULL)
+        return kmalloc(size);
+    
     header_t* header = block - sizeof(header_t);
     void* newBlock;
 
@@ -250,6 +253,9 @@ void* kcalloc(size_t num, size_t size)
 
 void kfree(void* block)
 {
+    if(block == NULL)
+        return;
+    
     header_t *left_block, *right_block;
     header_t *header = (header_t*)(block - sizeof(header_t));
     size_t totalSize = 0;
