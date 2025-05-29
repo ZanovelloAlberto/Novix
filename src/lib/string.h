@@ -24,5 +24,6 @@
 const char* strchr(const char* str, char chr);
 char* strcpy(char* dst, const char* src);
 unsigned strlen(const char* str);
-int strcmp(char *str1, char *str2);
+int strcmp(const char *str1, const char *str2);
+int strncmp(const char *str1, const char *str2, int num);
 long strtol(char* start, char** end, int base);

@@ -25,6 +25,7 @@
 #include <hal/physmem_manager.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <memory.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -430,12 +431,12 @@ void fdc_lba2chs(uint32_t lba, uint16_t* cylinderOut, uint16_t* sectorOut, uint1
     *headOut = (lba / FDC_SECTOR_PER_TRACK) % FDC_HEAD;
 }
 
-uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
+void FDC_readSectors(void* buffer, uint16_t lba, uint8_t sector_count)
 {
     uint16_t cylinder, sector, head;
 
     if(sector_count > 128)
-        return NULL;     // cannot read we only have 64k of buffer
+        return;     // cannot read we only have 64k of buffer
 
     FDC_controlMotor(true);
 
@@ -443,7 +444,7 @@ uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
     {
         lba = lba + i;
         if(lba > 2880)
-            return fdc_buffer;  // out of range !
+            return;  // out of range !
         
         fdc_lba2chs(lba, &cylinder, &sector, &head);
         FDC_seek(cylinder, head);
@@ -452,7 +453,7 @@ uint32_t* FDC_readSectors(uint16_t lba, uint8_t sector_count)
 
     FDC_controlMotor(false);
 
-    return fdc_buffer;
+    memcpy(buffer, fdc_buffer, sector_count*512);
 }
 
 void FDC_initialize()

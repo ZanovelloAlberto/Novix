@@ -24,6 +24,7 @@
 #include <hal/pit.h>
 #include <hal/physmem_manager.h>
 #include <hal/heap.h>
+#include <vfs/vfs.h>
 #include <drivers/fdc.h>
 #include <memory.h>
 #include <string.h>
@@ -241,6 +242,7 @@ void helpCommand(int argc, char** argv);
 void dumpsectorCommand(int argc, char** argv);
 void physmeminfoCommand(int argc, char** argv);
 void heaptestCommand(int argc, char** argv);
+void readfileCommand(int argc, char** argv);
 void shellExecute()
 {
     
@@ -256,6 +258,8 @@ void shellExecute()
         heaptestCommand(argc, args);
     else if(strcmp(prompt, "physmeminfo") == 0)
         physmeminfoCommand(argc, args);
+    else if(strcmp(prompt, "readfile") == 0)
+        readfileCommand(argc, args);
     else
         printf("%s: Unknown command", prompt);
 
@@ -294,6 +298,10 @@ void helpCommand(int argc, char** argv)
     colored_puts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
     moveCursorTo(getCurrentLine(), 25);
     puts(": perfom small test to the heap\n");
+
+    colored_puts(" - readfile", VGA_COLOR_LIGHT_CYAN);
+    moveCursorTo(getCurrentLine(), 25);
+    puts(": read a file from disk !\n");
 }
 
 void heaptestCommand(int argc, char** argv)
@@ -313,9 +321,35 @@ void physmeminfoCommand(int argc, char** argv)
     printf("total used block: %d\n", info.totalUsedBlock);
 }
 
+void readfileCommand(int argc, char** argv)
+{
+    if(argc > 2 || argc < 2)
+    {
+        puts("Usage: readfile <path>");
+        return;
+    }
+
+    uint8_t buffer[10];
+
+    int fd1 = VFS_open(argv[1], VFS_O_RDWR);
+    printf("opening %s\n", argv[1]);
+
+    size_t read = 0;
+
+    printf("content:\n");
+    do
+    {
+        read = VFS_read(fd1, buffer, 9);
+        buffer[read] = '\0';
+        printf("%s", buffer);
+    }while(read != 0);
+
+    VFS_close(fd1);
+}
+
 void dumpsectorCommand(int argc, char** argv)
 {
-    uint8_t* phys_buffer;
+    uint8_t phys_buffer[512];
 
     if(argc > 2 || argc < 2)
     {
@@ -323,7 +357,7 @@ void dumpsectorCommand(int argc, char** argv)
         return;
     }
 
-    phys_buffer = (uint8_t*)FDC_readSectors((uint16_t)strtol(argv[1], NULL, 0), 1);    // let's hope it's identity mapped. will need to map it if necessary
+    FDC_readSectors(phys_buffer, (uint16_t)strtol(argv[1], NULL, 0), 1);
 
     int c = 256;
     for(int i = 0; i < 2; i++)

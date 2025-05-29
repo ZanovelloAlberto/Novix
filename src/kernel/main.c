@@ -24,6 +24,7 @@
 #include <hal/hal.h>
 #include <drivers/fdc.h>
 #include <drivers/keyboard.h>
+#include <vfs/vfs.h>
 #include <boot_info.h>
 
 //============================================================================
@@ -65,6 +66,10 @@ void __attribute__((cdecl)) start(Boot_info* info)
     HAL_initialize(info);
     FDC_initialize();
     KEYBOARD_initialize();
+    VFS_init();
+
+    if(VFS_mount("fat12", "/") != VFS_OK)
+        printf("error while mounting at /!\n");
 
     putc('\n');
 

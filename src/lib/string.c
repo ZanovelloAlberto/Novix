@@ -78,7 +78,7 @@ unsigned strlen(const char* str)
     return len;
 }
 
-int strcmp(char *str1, char *str2)
+int strcmp(const char *str1, const char *str2)
 {
     while (*str1 == *str2)
     {
@@ -90,6 +90,20 @@ int strcmp(char *str1, char *str2)
     }
 
     return (*str1 < *str2) ? -1 : 1;
+}
+
+int strncmp(const char *str1, const char *str2, int num)
+{
+    for(int i = 0; (i < num) && *str1 != '\0'; i++)
+    {
+        if ((*str1 != *str2))
+            return (*str1 < *str2) ? -1 : 1;
+
+        str1++;
+        str2++;
+    }
+
+    return 0;
 }
 
 long strtol(char* start, char** end, int base)
