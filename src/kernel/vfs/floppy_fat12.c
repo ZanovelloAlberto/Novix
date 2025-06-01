@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <debug.h>
 #include <hal/heap.h>
 #include <memory.h>
 #include <string.h>
@@ -385,9 +385,9 @@ fat_dir_entry_t* fat12_lookup_in_dir(uint32_t* dir, char* fatname, int dirEntryC
     for(int i = 0; i < dirEntryCount; i++)
     {
         current_entry = (fat_dir_entry_t*)dir + i;
-
         if(strncmp(current_entry->filename, fatname, 11) == 0)
             return current_entry;
+            
     }
 
     return NULL;

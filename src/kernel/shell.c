@@ -18,6 +18,7 @@
 */
 
 #include <stdio.h>
+#include <debug.h>
 #include <drivers/vga_text.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -332,8 +333,14 @@ void readfileCommand(int argc, char** argv)
 
     uint8_t buffer[10];
 
-    int fd1 = VFS_open(argv[1], VFS_O_RDWR);
     printf("opening %s\n", argv[1]);
+    int fd1 = VFS_open(argv[1], VFS_O_RDWR);
+
+    if(fd1 < 0)
+    {
+        VGA_puts("failed to open the file\n");
+        return;
+    }
 
     size_t read = 0;
 

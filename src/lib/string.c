@@ -94,10 +94,13 @@ int strcmp(const char *str1, const char *str2)
 
 int strncmp(const char *str1, const char *str2, int num)
 {
-    for(int i = 0; (i < num) && *str1 != '\0'; i++)
+    for(int i = 0; i < num; i++)
     {
         if ((*str1 != *str2))
             return (*str1 < *str2) ? -1 : 1;
+
+        if(*str1 == '\0')
+            return 0;   // and of string
 
         str1++;
         str2++;
