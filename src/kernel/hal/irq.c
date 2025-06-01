@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <debug.h>
 #include <stddef.h>
 #include <hal/irq.h>
 #include <hal/io.h>
@@ -69,8 +69,7 @@ void IRQ_initialize()
     PIC_configure(PIC_REMAP_OFFSET, PIC_REMAP_OFFSET + 8);
     PIT_initialize();
 
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitialazing IRQ ...");
+    log_info("kernel", "Initialazing IRQ ...");
 
     for(int i = 0; i < 16; i++)
         ISR_registerNewHandler(PIC_REMAP_OFFSET + i, IRQ_handler);
@@ -80,9 +79,6 @@ void IRQ_initialize()
 
     // enable interrupts
     enableInterrupts();
-    
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void IRQ_registerNewHandler(int irq, IRQHandler handler)

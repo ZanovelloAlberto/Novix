@@ -18,7 +18,7 @@
 */
 
 #include <stdbool.h>
-#include <stdio.h>
+#include <debug.h>
 #include <hal/irq.h>
 #include <hal/io.h>
 #include <drivers/keyboard.h>
@@ -282,16 +282,14 @@ KEYCODE KEYBOARD_getLastKey()
 
 void KEYBOARD_initialize()
 {
-    colored_puts("[DRIVER]", VGA_COLOR_LIGHT_CYAN);
-    puts("\tInitializing Keyboard...");
+    log_info("kernel", "Initializing Keyboard...");
 
     disableInterrupts();
     KEYBOARD_enable(); // just in case !
 
     if(!KEYBOARD_selfTest() || !KEYBOARD_interfaceTest())
     {
-        moveCursorTo(getCurrentLine(), 60);
-        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
+        log_err("kernel", "Initalization failed\n");
 
         KEYBOARD_disable();
         return;
@@ -302,9 +300,6 @@ void KEYBOARD_initialize()
     
     IRQ_registerNewHandler(1, (IRQHandler)KEYBOARD_interruptHandler);
     enableInterrupts();
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 char KEYBOARD_scanToAscii(uint8_t scancode)

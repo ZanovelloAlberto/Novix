@@ -17,7 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <debug.h>
 #include <hal/heap.h>
 #include <stdint.h>
 #include <hal/virtmem_manager.h>
@@ -169,8 +169,7 @@ void VMALLOC_freeThisRange(void* ptr, uint8_t size)
 
 void VMALLOC_initialize()
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing vmalloc ...");
+    log_info("kernel", "Initializing vmalloc ...");
 
     vmalloc_totalBlockNumber = roundUp_div(VMALLOC_SIZE, BLOCK_SIZE);
     vmalloc_bitmapSize = roundUp_div(vmalloc_totalBlockNumber, BLOCK_PER_BYTE);
@@ -178,9 +177,7 @@ void VMALLOC_initialize()
     vmalloc_bitmap = kmalloc(sizeof(uint8_t) * vmalloc_bitmapSize);
     if(vmalloc_bitmap == NULL)
     {
-        moveCursorTo(getCurrentLine(), 60);
-        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
-
+        log_err("kernel", "Initialization failed!\n");
         return; // error
     }
 
@@ -193,9 +190,6 @@ void VMALLOC_initialize()
         VMALLOC_setBlockToFree(i);
         vmalloc_totalFreeBlock++;
     }
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void* vmalloc(size_t size)

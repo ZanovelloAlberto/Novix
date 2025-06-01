@@ -17,7 +17,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <debug.h>
+#include <drivers/vga_text.h>
+#include <drivers/e9_port.h>
 #include <hal/heap.h>
 #include <string.h>
 
@@ -109,8 +111,8 @@ static int is_fd_valid(fd_t fd)
 
 void VFS_init()
 {
-    colored_puts("[VFS]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing The VFS...");
+	log_info("kernel", "Initializing The VFS...");
+
 	vfs_root = NULL;		// 0 mountpoint
 	num_registered_fs = 0;
 
@@ -120,16 +122,9 @@ void VFS_init()
 	for(int i = 0; i < MAX_OPEN_FILES; i++)
 		vfs_open_files[i].vnode = NULL;
 
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
-
-    colored_puts("[VFS]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing floppy FAT12...");
+	log_info("kernel", "Initializing floppy FAT12...");
 
     fat12_init();
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 vnode_t* lookup_path_name(const char* path)
@@ -308,6 +303,22 @@ size_t VFS_read(fd_t fd, void *buffer, size_t size)
 
 size_t VFS_write(fd_t fd, const void *buffer, size_t size)
 {
+	switch (fd)
+    {
+    case VFS_FD_STDOUT:
+    case VFS_FD_STDERR:
+        for (size_t i = 0; i < size; i++)
+            VGA_putc(*((uint8_t*)buffer+i));
+        return size;
+
+    case VFS_FD_DEBUG:
+        for (size_t i = 0; i < size; i++)
+			E9_putc((*(uint8_t*)buffer+i));
+        return size;
+    }
+
+	// else here:
+
 	if(!is_fd_valid(fd))
 		return VFS_EBADF;
 

@@ -150,4 +150,8 @@ fd_t VFS_open(const char *path, uint16_t mode);
 int VFS_close(fd_t descriptor);
 
 size_t VFS_read(fd_t fd, void *buffer, size_t size);
+
+#define VFS_FD_STDOUT   -1
+#define VFS_FD_STDERR   -2
+#define VFS_FD_DEBUG    -3
 size_t VFS_write(fd_t fd, const void *buffer, size_t size);

@@ -19,7 +19,7 @@
 
 #include <hal/pit.h>
 #include <hal/io.h>
-#include <stdio.h>
+#include <debug.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -60,8 +60,7 @@ void PIT_initialize()
 {
     uint32_t count = 1193180 / FREQUENCY;
 
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing PIT...");
+    log_info("kernel", "Initializing PIT...");
 
     // configuring COUNTER 0 for irq0
     outb(CW_PORT, PIT_ICW_BINARYCODED_DECIMAL | PIT_ICW_MODE2 | PIT_ICW_RL_LSB_MSB | PIT_ICW_COUNTER0);
@@ -77,9 +76,6 @@ void PIT_initialize()
     * TODO:
     * configuring COUNTER 2 for PC speaker
     */
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 uint32_t g_tickcount = 0;

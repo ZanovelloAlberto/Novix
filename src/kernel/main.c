@@ -18,6 +18,8 @@
 */
 
 #include <stdio.h>
+#include <debug.h>
+#include <drivers/vga_text.h>
 #include <stddef.h>
 #include <memory.h>
 #include <shell.h>
@@ -59,9 +61,9 @@ const char logo[] =
 
 void __attribute__((cdecl)) start(Boot_info* info)
 {
-    clr();
+    VGA_clr();
 
-    puts(logo);
+    VGA_puts(logo);
 
     HAL_initialize(info);
     FDC_initialize();
@@ -71,11 +73,17 @@ void __attribute__((cdecl)) start(Boot_info* info)
     if(VFS_mount("fat12", "/") != VFS_OK)
         printf("error while mounting at /!\n");
 
-    putc('\n');
+    VGA_putc('\n');
+
+    log_debug("kernel", "debug message");
+    log_info("kernel", "info message");
+    log_warn("kernel", "warning message");
+    log_err("kernel", "error message");
+    log_crit("kernel", "critical message");
 
     while(1)
     {
-        colored_puts("root@host> ", VGA_COLOR_WHITE);
+        VGA_coloredPuts("root@host> ", VGA_COLOR_WHITE);
 
         //reading
         shellRead();

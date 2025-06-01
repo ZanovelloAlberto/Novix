@@ -25,79 +25,10 @@
 #include <stdbool.h>
 
 //============================================================================
-//    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
-
-#define WIDTH 80
-#define HEIGHT 25
-
-//============================================================================
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
 
-uint16_t column = 0;
-uint16_t line = 0;
-uint16_t* const vga = (uint16_t* const) 0xB8000;
-const VGA_COLOR background = VGA_COLOR_BLACK;
-const uint16_t defaultColor = (VGA_COLOR_LIGHT_GREY << 8) | (background << 12);
-
-uint16_t currentColor = defaultColor;
 const char g_HexChars[] = "0123456789abcdef";
-
-//============================================================================
-//    IMPLEMENTATION PRIVATE FUNCTION PROTOTYPES
-//============================================================================
-
-void updateCursor();
-void newLine();
-void scrollUp();
-
-//============================================================================
-//    IMPLEMENTATION PRIVATE FUNCTIONS
-//============================================================================
-
-/** updateCursor:
-* update the cursor position with the line and column value
-*/
-void updateCursor()
-{
-    unsigned short index = line * WIDTH + column;
-    outb(0x3d4, 14);  //14 tells the framebuffer to expect the highest 8 bits of the position
-    outb(0x3d5, (uint8_t) (index >> 8) & 0xff);
-
-    outb(0x3d4, 15); //15 tells the framebuffer to expect the lowest 8 bits of the position
-    outb(0x3d5, (uint8_t) index & 0x00ff);
-}
-
-/** newLine:
-* handle the \n character
-*/
-void newLine()
-{
-    if(line < HEIGHT - 1){
-        line++;
-        column = 0;
-    }else{
-        scrollUp();
-        column = 0;
-    }
-}
-
-/** scrollUp:
-* scroll Up the screen after hitting the last line
-*/
-void scrollUp()
-{
-    for(uint16_t y = 0; y < HEIGHT; y++){
-        for(uint16_t x = 0; x < WIDTH; x++){
-            vga[(y-1) * WIDTH + x] = vga[y * WIDTH + x];
-        }
-    }
-
-    for(uint16_t x = 0; x < WIDTH; x++){
-        vga[(HEIGHT - 1) * WIDTH + x] = ' ' | currentColor;
-    }
-}
 
 //============================================================================
 //    INTERFACE FUNCTIONS
@@ -136,149 +67,18 @@ KEYCODE waitForKeyPress()
 	return key;
 }
 
-void setCurrentColor(VGA_COLOR foreground)
+void fputc(char c, fd_t file)
 {
-    currentColor = (foreground << 8) | (background << 12);
+    VFS_write(file, &c, sizeof(c));
 }
 
-void setColorToDefault()
+void fputs(const char* str, fd_t file)
 {
-    currentColor = defaultColor;
-}
-
-void moveCursorTo(uint16_t new_line, uint16_t new_column)
-{
-    if(new_line >= HEIGHT || new_column >= WIDTH)
-        return;
-
-    line = new_line;
-    column = new_column;
-    updateCursor();
-}
-
-uint16_t getCurrentLine()
-{
-    return line;
-}
-
-uint16_t getCurrentColumn()
-{
-    return column;
-}
-
-/** clr:
-* clear the screen with the defaut color and update the cursor
-*/
-void clr()
-{
-    line = 0;
-    column = 0;
-    currentColor = defaultColor;
-
-    for(uint16_t y = 0; y < HEIGHT; y++){
-        for(uint16_t x = 0; x < WIDTH; x++){
-            vga[y * WIDTH + x] = ' ' | defaultColor;
-        }
-    }
-
-    updateCursor();
-}
-
-/** puts:
-* print a string to the screen
-* @param s the string
-*/
-void puts(const char* s)
-{
-    while(*s){
-        putc(*s);
-        s++;
-        updateCursor();
-    }
-}
-
-void colored_puts(const char* s, VGA_COLOR foreground)
-{
-    setCurrentColor(foreground);
-    puts(s);
-    setColorToDefault();
-}
-
-/** putc:
-* print a charater to the screen
-* @param c the character
-*/
-void putc(const char c)
-{
-    
-        switch(c){
-        case '\n':
-            newLine();
-            break;
-        case '\r':
-            column = 0;
-            break;
-        case '\b':
-            if(column == 0)
-            {
-                if(line > 0)
-                {
-                    line--;
-                    column = WIDTH - 1;
-                }
-            }else{
-                column--;
-            }
-            vga[line * WIDTH + (column)] = ' ' | currentColor;
-            break;
-        case '\t':
-            if(column == WIDTH){
-                newLine();
-            }
-
-            uint16_t tabLen = 4 - (column % 4);
-            while(tabLen != 0){
-                vga[line * WIDTH + (column++)] = ' ' | currentColor;
-                tabLen--;
-            }
-            break;
-        default:
-            if(column == WIDTH){
-                newLine();
-            }
-
-            vga[line * WIDTH + (column++)] = c | currentColor;
-        break;
-    }
-    updateCursor();
-}
-
-void printf_unsigned(unsigned long long number, int radix)
-{
-    char buffer[32];
-    int pos = 0;
-
-    // convert number to ASCII
-    do 
+    while(*str)
     {
-        unsigned long long rem = number % radix;
-        number /= radix;
-        buffer[pos++] = g_HexChars[rem];
-    } while (number > 0);
-
-    // print number in reverse order
-    while (--pos >= 0)
-        putc(buffer[pos]);
-}
-
-void printf_signed(long long number, int radix)
-{
-    if (number < 0)
-    {
-        putc('-');
-        printf_unsigned(-number, radix);
+        fputc(*str, file);
+        str++;
     }
-    else printf_unsigned(number, radix);
 }
 
 #define PRINTF_STATE_NORMAL         0
@@ -293,11 +93,36 @@ void printf_signed(long long number, int radix)
 #define PRINTF_LENGTH_LONG          3
 #define PRINTF_LENGTH_LONG_LONG     4
 
-void printf(const char* fmt, ...)
+void fprintf_unsigned(fd_t file, unsigned long long number, int radix)
 {
-    va_list args;
-    va_start(args, fmt);
+    char buffer[32];
+    int pos = 0;
 
+    // convert number to ASCII
+    do 
+    {
+        unsigned long long rem = number % radix;
+        number /= radix;
+        buffer[pos++] = g_HexChars[rem];
+    } while (number > 0);
+
+    // print number in reverse order
+    while (--pos >= 0)
+        fputc(buffer[pos], file);
+}
+
+void fprintf_signed(fd_t file, long long number, int radix)
+{
+    if (number < 0)
+    {
+        fputc('-', file);
+        fprintf_unsigned(file, -number, radix);
+    }
+    else fprintf_unsigned(file, number, radix);
+}
+
+void vfprintf(fd_t file, const char* fmt, va_list args)
+{
     int state = PRINTF_STATE_NORMAL;
     int length = PRINTF_LENGTH_DEFAULT;
     int radix = 10;
@@ -313,7 +138,7 @@ void printf(const char* fmt, ...)
                 {
                     case '%':   state = PRINTF_STATE_LENGTH;
                                 break;
-                    default:    putc(*fmt);
+                    default:    fputc(*fmt, file);
                                 break;
                 }
                 break;
@@ -353,14 +178,14 @@ void printf(const char* fmt, ...)
             PRINTF_STATE_SPEC_:
                 switch (*fmt)
                 {
-                    case 'c':   putc((char)va_arg(args, int));
+                    case 'c':   fputc((char)va_arg(args, int), file);
                                 break;
 
                     case 's':   
-                                puts(va_arg(args, const char*));
+                                fputs(va_arg(args, const char*), file);
                                 break;
 
-                    case '%':   putc('%');
+                    case '%':   fputc('%', file);
                                 break;
 
                     case 'd':
@@ -390,13 +215,13 @@ void printf(const char* fmt, ...)
                         {
                         case PRINTF_LENGTH_SHORT_SHORT:
                         case PRINTF_LENGTH_SHORT:
-                        case PRINTF_LENGTH_DEFAULT:     printf_signed(va_arg(args, int), radix);
+                        case PRINTF_LENGTH_DEFAULT:     fprintf_signed(file, va_arg(args, int), radix);
                                                         break;
 
-                        case PRINTF_LENGTH_LONG:        printf_signed(va_arg(args, long), radix);
+                        case PRINTF_LENGTH_LONG:        fprintf_signed(file, va_arg(args, long), radix);
                                                         break;
 
-                        case PRINTF_LENGTH_LONG_LONG:   printf_signed(va_arg(args, long long), radix);
+                        case PRINTF_LENGTH_LONG_LONG:   fprintf_signed(file, va_arg(args, long long), radix);
                                                         break;
                         }
                     }
@@ -406,13 +231,13 @@ void printf(const char* fmt, ...)
                         {
                         case PRINTF_LENGTH_SHORT_SHORT:
                         case PRINTF_LENGTH_SHORT:
-                        case PRINTF_LENGTH_DEFAULT:     printf_unsigned(va_arg(args, unsigned int), radix);
+                        case PRINTF_LENGTH_DEFAULT:     fprintf_unsigned(file, va_arg(args, unsigned int), radix);
                                                         break;
                                                         
-                        case PRINTF_LENGTH_LONG:        printf_unsigned(va_arg(args, unsigned  long), radix);
+                        case PRINTF_LENGTH_LONG:        fprintf_unsigned(file, va_arg(args, unsigned  long), radix);
                                                         break;
 
-                        case PRINTF_LENGTH_LONG_LONG:   printf_unsigned(va_arg(args, unsigned  long long), radix);
+                        case PRINTF_LENGTH_LONG_LONG:   fprintf_unsigned(file, va_arg(args, unsigned  long long), radix);
                                                         break;
                         }
                     }
@@ -429,6 +254,71 @@ void printf(const char* fmt, ...)
 
         fmt++;
     }
+}
 
+void fprintf(fd_t file, const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(file, fmt, args);
     va_end(args);
+}
+
+void fprint_buffer(fd_t file, const char* msg, const void* buffer, uint32_t count)
+{
+    const uint8_t* u8Buffer = (const uint8_t*)buffer;
+    
+    fputs(msg, file);
+    for (uint16_t i = 0; i < count; i++)
+    {
+        fputc(g_HexChars[u8Buffer[i] >> 4], file);
+        fputc(g_HexChars[u8Buffer[i] & 0xF], file);
+    }
+    fputs("\n", file);
+}
+
+void putc(char c)
+{
+    fputc(c, VFS_FD_STDOUT);
+}
+
+void puts(const char* str)
+{
+    fputs(str, VFS_FD_STDOUT);
+}
+
+void printf(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(VFS_FD_STDOUT, fmt, args);
+    va_end(args);
+}
+
+void print_buffer(const char* msg, const void* buffer, uint32_t count)
+{
+    fprint_buffer(VFS_FD_STDOUT, msg, buffer, count);
+}
+
+void debugc(char c)
+{
+    fputc(c, VFS_FD_DEBUG);
+}
+
+void debugs(const char* str)
+{
+    fputs(str, VFS_FD_DEBUG);
+}
+
+void debugf(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(VFS_FD_DEBUG, fmt, args);
+    va_end(args);
+}
+
+void debug_buffer(const char* msg, const void* buffer, uint32_t count)
+{
+    fprint_buffer(VFS_FD_DEBUG, msg, buffer, count);
 }

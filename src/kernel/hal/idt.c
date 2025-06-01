@@ -18,7 +18,7 @@
 */
 
 #include <hal/idt.h>
-#include <stdio.h>
+#include <debug.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -65,11 +65,7 @@ void IDT_setGate(int interrupt, void* offset, uint8_t attribute)
 
 void IDT_initilize()
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing the IDT...");
+    log_info("kernel", "Initializing the IDT...");
 
     IDT_flush(&g_IDTdescriptor);
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

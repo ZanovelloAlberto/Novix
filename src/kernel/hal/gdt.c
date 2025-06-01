@@ -18,7 +18,7 @@
 */
 
 #include <hal/gdt.h>
-#include <stdio.h>
+#include <debug.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -123,11 +123,7 @@ void __attribute__((cdecl)) GDT_flush(Gdt_descriptor* descriptor);
 
 void GDT_initilize()
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing the GDT...");
+    log_info("kernel", "Initializing the GDT...");
 
     GDT_flush(&g_GDTdescriptor);
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

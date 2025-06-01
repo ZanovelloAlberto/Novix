@@ -18,6 +18,7 @@
 */
 
 #include <stdio.h>
+#include <drivers/vga_text.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <hal/io.h>
@@ -249,7 +250,7 @@ void shellExecute()
     if(strcmp(prompt, "help") == 0)
         helpCommand(argc, args);
     else if(strcmp(prompt, "clear") == 0)
-        clr();
+        VGA_clr();
     else if(strcmp(prompt, "exit") == 0)
         panic();
     else if(strcmp(prompt, "dumpsector") == 0)
@@ -271,36 +272,36 @@ void helpCommand(int argc, char** argv)
     putc('\n');
 
     puts("  command");
-    moveCursorTo(getCurrentLine(), 27);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 27);
     puts("description\n");
     puts("------------------------------------------------------------------------------\n");
 
-    colored_puts(" - help", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - help", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": display this message\n");
 
-    colored_puts(" - clear", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - clear", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": clear the screen\n");
 
-    colored_puts(" - exit", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - exit", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": halt the system (forever)\n");
 
-    colored_puts(" - dumpsector", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - dumpsector", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": read a sector on disk and display the content\n");
 
-    colored_puts(" - physmeminfo", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - physmeminfo", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": physical memory manager information\n");
 
-    colored_puts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": perfom small test to the heap\n");
 
-    colored_puts(" - readfile", VGA_COLOR_LIGHT_CYAN);
-    moveCursorTo(getCurrentLine(), 25);
+    VGA_coloredPuts(" - readfile", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": read a file from disk !\n");
 }
 

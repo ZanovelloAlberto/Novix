@@ -20,6 +20,7 @@
 #include <hal/isr.h>
 #include <hal/io.h>
 #include <stdio.h>
+#include <debug.h>
 #include <stddef.h>
 
 //============================================================================
@@ -104,13 +105,9 @@ void ISR_handler(Registers* regs)
 
 void ISR_initialze()
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing ISR...");
+    log_info("kernel", "Initializing ISR...");
 
     ISR_initializeGates();
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void ISR_registerNewHandler(int interrupt, ISRHandler handler)

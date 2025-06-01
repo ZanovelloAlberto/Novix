@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
+#include <debug.h>
 #include <hal/physmem_manager.h>
 #include <memory.h>
 #include <utility.h>
@@ -182,13 +182,11 @@ void PHYSMEM_initialize(Boot_info* info)
 {
     uint32_t block;
 
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing physical memory manager...");
+    log_info("kernel", "Initializing physical memory manager...");
 
     if(PHYSMEM_initData(info) == 0)
     {
-        moveCursorTo(getCurrentLine(), 60);
-        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
+        log_err("kernel", "Initializition failed!\n");
         return;
     }
 
@@ -231,9 +229,6 @@ void PHYSMEM_initialize(Boot_info* info)
         else
             totalUsedBlock++;
     }
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void* PHYSMEM_AllocBlock()

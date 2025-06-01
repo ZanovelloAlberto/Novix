@@ -23,7 +23,7 @@
 #include <hal/pit.h>
 #include <hal/io.h>
 #include <hal/physmem_manager.h>
-#include <stdio.h>
+#include <debug.h>
 #include <stddef.h>
 #include <memory.h>
 
@@ -458,17 +458,13 @@ void FDC_readSectors(void* buffer, uint16_t lba, uint8_t sector_count)
 
 void FDC_initialize()
 {
-    colored_puts("[DRIVER]", VGA_COLOR_LIGHT_CYAN);
-    puts("\tInitializing FDC...");
+    log_info("kernel", "Initializing FDC...");
 
     fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 
     if(fdc_buffer == NULL)
     {
-        setCurrentColor(VGA_COLOR_LIGHT_RED);
-        moveCursorTo(getCurrentLine(), 60);
-        puts("[Failed]\n\r");
-        setColorToDefault();
+        log_err("kernel", "Initialization Failed\n");
         return;
     }
 
@@ -478,7 +474,4 @@ void FDC_initialize()
 
     FDC_setCurrentDrive(0x0);
     FDC_resetController();
-    
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }

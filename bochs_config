@@ -6,3 +6,6 @@ floppya: 1_44=build/main.img, status=inserted
 boot: floppy
 
 mouse: enabled=0
+
+port_e9_hack: enabled=1
+info: action=ignore

@@ -20,7 +20,7 @@
 
 #include <hal/io.h>
 #include <hal/pic.h>
-#include <stdio.h>
+#include <debug.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -80,8 +80,7 @@ enum {
 
 void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tConfiguring PIC...");
+    log_info("kernel", "Configuring PIC...");
 
     // initialization control word 1
     outb(PIC1_COMMAND_PORT, PIC_ICW1_ICW4 | PIC_ICW1_INITIALIZE);
@@ -112,9 +111,6 @@ void PIC_configure(uint8_t offsetPic1, uint8_t offsetPic2)
     iowait();
     outb(PIC2_DATA_PORT, 0);
     iowait();
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void PIC_sendEndOfInterrupt(int irq)

@@ -20,29 +20,8 @@
 #pragma once
 #include <stdint.h>
 #include <drivers/keyboard.h>
-
-//============================================================================
-//    INTERFACE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
-//============================================================================
-
-typedef enum {
-    VGA_COLOR_BLACK         = 0,
-    VGA_COLOR_BLUE          = 1,
-    VGA_COLOR_GREEN         = 2,
-    VGA_COLOR_CYAN          = 3,
-    VGA_COLOR_RED           = 4,
-    VGA_COLOR_MAGENTA       = 5,
-    VGA_COLOR_BROWN         = 6,
-    VGA_COLOR_LIGHT_GREY    = 7,
-    VGA_COLOR_DARK_GREY     = 8,
-    VGA_COLOR_LIGHT_BLUE    = 9,
-    VGA_COLOR_LIGHT_GREEN   = 10,
-    VGA_COLOR_LIGHT_CYAN    = 11,
-    VGA_COLOR_LIGHT_RED     = 12,
-    VGA_COLOR_LIGHT_MAGENTA = 13,
-    VGA_COLOR_YELLOW        = 14,
-    VGA_COLOR_WHITE         = 15
-}VGA_COLOR;
+#include <stdarg.h>
+#include <vfs/vfs.h>
 
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
@@ -50,16 +29,19 @@ typedef enum {
 
 char getchar();
 KEYCODE waitForKeyPress();
-void puts(const char* s);
-void colored_puts(const char* s, VGA_COLOR foreground);
-void putc(const char s);
+
+void fputc(char c, fd_t file);
+void fputs(const char* str, fd_t file);
+void vfprintf(fd_t file, const char* fmt, va_list args);
+void fprintf(fd_t file, const char* fmt, ...);
+void fprint_buffer(fd_t file, const char* msg, const void* buffer, uint32_t count);
+
+void putc(char c);
+void puts(const char* str);
 void printf(const char* fmt, ...);
-void scrollUp();
-void newLine();
-void setCurrentColor(VGA_COLOR foreground);
-void setColorToDefault();
-void moveCursorTo(uint16_t new_line, uint16_t new_column);
-uint16_t getCurrentLine();
-uint16_t getCurrentColumn();
-void clr();
-void updateCursor();
+void print_buffer(const char* msg, const void* buffer, uint32_t count);
+
+void debugc(char c);
+void debugs(const char* str);
+void debugf(const char* fmt, ...);
+void debug_buffer(const char* msg, const void* buffer, uint32_t count);

@@ -17,7 +17,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <debug.h>
+#include <drivers/vga_text.h>
 #include <memory.h>
 #include <hal/virtmem_manager.h>
 #include <hal/heap.h>
@@ -82,16 +83,14 @@ bool criteria_function(type_t a, type_t b)
 
 void HEAP_initialize()
 {
-    colored_puts("[HAL]", VGA_COLOR_LIGHT_CYAN);
-    puts("\t\tInitializing Heap manager...");
+    log_info("kernel", "Initializing Heap manager...");
 
     brk = (void*)BREAK_START_ADDR;
     lastHeapAllocatedPage = HEAP_START_ADDR;
 
     if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage)) // first we map the freeBlockArray address
     {
-        moveCursorTo(getCurrentLine(), 60);
-        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
+        log_err("kernel", "Initialization Failed!\n");
         return;
     }
 
@@ -99,15 +98,11 @@ void HEAP_initialize()
 
     if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage)) // then we map the working heap address
     {
-        moveCursorTo(getCurrentLine(), 60);
-        colored_puts("[Failed]\n\r", VGA_COLOR_LIGHT_RED);
+        log_err("kernel", "Initialization Failed!\n");
         return;
     }
 
     freeBlockArray = create_static_array((void*)HEAP_START_ADDR, FREEBLOCK_LIST_SIZE, criteria_function);
-
-    moveCursorTo(getCurrentLine(), 60);
-    colored_puts("[Success]\n\r", VGA_COLOR_LIGHT_GREEN);
 }
 
 void* sbrk(intptr_t size)
@@ -325,7 +320,7 @@ void kfree(void* block)
 
 void heapTest()
 {
-    colored_puts("allocating 3 blocks:\n", VGA_COLOR_LIGHT_RED);
+    VGA_coloredPuts("allocating 3 blocks:\n", VGA_COLOR_LIGHT_RED);
     int* test = kmalloc(sizeof(int) * 15);
     int* test0 = kmalloc(sizeof(int) * 10);
     int* test1 = kmalloc(sizeof(int) * 5);
@@ -338,7 +333,7 @@ void heapTest()
         temp = temp->next;
     }
 
-    colored_puts("freeing a block in the middle:\n", VGA_COLOR_LIGHT_RED);
+    VGA_coloredPuts("freeing a block in the middle:\n", VGA_COLOR_LIGHT_RED);
     kfree(test0); // freeing a block in the middle
 
     temp = head;
@@ -349,7 +344,7 @@ void heapTest()
         temp = temp->next;
     }
 
-    colored_puts("freeing a block to perform a merge:\n", VGA_COLOR_LIGHT_RED);
+    VGA_coloredPuts("freeing a block to perform a merge:\n", VGA_COLOR_LIGHT_RED);
     kfree(test); // freeing the first block
 
     temp = head;
@@ -360,7 +355,7 @@ void heapTest()
         temp = temp->next;
     }
 
-    colored_puts("allocating a block to perform a split:\n", VGA_COLOR_LIGHT_RED);
+    VGA_coloredPuts("allocating a block to perform a split:\n", VGA_COLOR_LIGHT_RED);
     test0 = kmalloc(sizeof(int) * 10); // using kmalloc
 
     temp = head;
@@ -371,7 +366,7 @@ void heapTest()
         temp = temp->next;
     }
 
-    colored_puts("freeing the last block (to merge and release memory):\n", VGA_COLOR_LIGHT_RED);
+    VGA_coloredPuts("freeing the last block (to merge and release memory):\n", VGA_COLOR_LIGHT_RED);
     kfree(test1);     // freeing the last block
 
     temp = head;
