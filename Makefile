@@ -30,6 +30,8 @@ $(BUILD_DIR)/main.img: lib bootloader kernel
 	echo "Test message inside 'mydir' !" > test_msg.txt
 	mcopy -i $(BUILD_DIR)/main.img test_msg.txt "::mydir/test_msg.txt"
 	rm test_msg.txt
+	$(ASM) $(SRC_DIR)/user/userprog.asm -f bin -o $(BUILD_DIR)/userprog.bin
+	mcopy -i $(BUILD_DIR)/main.img $(BUILD_DIR)/userprog.bin "::userprog.bin"
 
 
 #

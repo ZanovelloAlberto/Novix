@@ -27,6 +27,7 @@
 #include <hal/heap.h>
 #include <hal/vmalloc.h>
 #include <hal/dma.h>
+#include <hal/syscall.h>
 
 //============================================================================
 //    INTERFACE FUNCTIONS
@@ -43,4 +44,5 @@ void HAL_initialize(Boot_info* info)
     HEAP_initialize();
     VMALLOC_initialize();
     DMA_enable();
+    SYSCALL_initialize();
 }

@@ -57,7 +57,7 @@ void __attribute__((cdecl)) IDT_flush(Idt_descriptor* descriptor);
 void IDT_setGate(int interrupt, void* offset, uint8_t attribute)
 {
     g_IDT[interrupt].offset_low     = (uint32_t)offset & 0XFFFF;
-    g_IDT[interrupt].segment        = 0X08;
+    g_IDT[interrupt].segment        = 0X08; // code segment
     g_IDT[interrupt].reserved       = 0;
     g_IDT[interrupt].attribute      = attribute;
     g_IDT[interrupt].offset_high    = ((uint32_t)offset >> 16) & 0xFFFF;

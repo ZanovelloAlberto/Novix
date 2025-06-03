@@ -29,12 +29,30 @@
 typedef uint32_t PDE;
 typedef uint32_t PTE;
 
+typedef enum {
+    PTE_PAGE_PRESENT        = 0X1,
+    PTE_PAGE_WRITE          = 0X2,
+    PTE_PAGE_KERNEL_MODE    = 0X0,
+    PTE_PAGE_USER_MODE      = 0X4,
+}PTE_FLAGS;
+
+typedef enum {
+    PDE_PRESENT             = 0X01,
+    PDE_WRITE               = 0X02,
+    PDE_KERNEL_MODE         = 0X00,
+    PDE_USER_MODE           = 0X04,
+    PDE_PWT                 = 0X08,
+    PDE_PCD                 = 0X10,
+    PDE_4KBPAGE             = 0X00,
+    PDE_4MBPAGE             = 0X80,
+}PDE_FLAGS;
+
 //============================================================================
 //    INTERFACE FUNCTION PROTOTYPES
 //============================================================================
 
 void VIRTMEM_initialize();
-bool VIRTMEM_mapPage (void* virt);
+bool VIRTMEM_mapPage (void* virt, bool kernel_mode);
 bool VIRTMEM_unMapPage (void* virt);
 void VIRTMEM_freePage(PTE* entry);
 bool VIRTMEM_allocPage(PTE* entry, uint32_t flags);

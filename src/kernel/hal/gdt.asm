@@ -41,3 +41,28 @@ GDT_flush:
     mov esp, ebp
     pop ebp
     ret
+
+global TSS_flush
+TSS_flush:
+    ; make new call frame
+    push ebp             ; save old call frame
+    mov ebp, esp         ; initialize new call frame
+
+    push cx
+
+    xor ax, ax
+    xor cx, cx
+
+    mov byte al, [ebp + 8]
+    mov cl, 8
+    mul cl
+
+    ;or eax, 0   ; or with the rpl(unecessary)
+    ltr ax
+
+    pop cx
+
+    ; restore old call frame
+    mov esp, ebp
+    pop ebp
+    ret

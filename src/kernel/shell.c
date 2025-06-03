@@ -25,7 +25,9 @@
 #include <hal/io.h>
 #include <hal/pit.h>
 #include <hal/physmem_manager.h>
+#include <hal/virtmem_manager.h>
 #include <hal/heap.h>
+#include <hal/usermode.h>
 #include <vfs/vfs.h>
 #include <drivers/fdc.h>
 #include <memory.h>
@@ -243,8 +245,8 @@ void shellParse()
 void helpCommand(int argc, char** argv);
 void dumpsectorCommand(int argc, char** argv);
 void physmeminfoCommand(int argc, char** argv);
-void heaptestCommand(int argc, char** argv);
 void readfileCommand(int argc, char** argv);
+void usermodecommand(int argc, char** argv);
 void shellExecute()
 {
     
@@ -256,8 +258,8 @@ void shellExecute()
         panic();
     else if(strcmp(prompt, "dumpsector") == 0)
         dumpsectorCommand(argc, args);
-    else if(strcmp(prompt, "heaptest") == 0)
-        heaptestCommand(argc, args);
+    else if(strcmp(prompt, "usermode") == 0)
+        usermodecommand(argc, args);
     else if(strcmp(prompt, "physmeminfo") == 0)
         physmeminfoCommand(argc, args);
     else if(strcmp(prompt, "readfile") == 0)
@@ -297,18 +299,13 @@ void helpCommand(int argc, char** argv)
     VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": physical memory manager information\n");
 
-    VGA_coloredPuts(" - heaptest", VGA_COLOR_LIGHT_CYAN);
-    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
-    puts(": perfom small test to the heap\n");
-
     VGA_coloredPuts(" - readfile", VGA_COLOR_LIGHT_CYAN);
     VGA_moveCursorTo(VGA_getCurrentLine(), 25);
     puts(": read a file from disk !\n");
-}
 
-void heaptestCommand(int argc, char** argv)
-{
-    heapTest();
+    VGA_coloredPuts(" - usermode", VGA_COLOR_LIGHT_CYAN);
+    VGA_moveCursorTo(VGA_getCurrentLine(), 25);
+    puts(": jump and run a usermode program !\n");
 }
 
 void physmeminfoCommand(int argc, char** argv)
@@ -321,6 +318,25 @@ void physmeminfoCommand(int argc, char** argv)
     printf("total block number: %d\n", info.totalBlockNumber);
     printf("total free block: %d\n", info.totalFreeBlock);
     printf("total used block: %d\n", info.totalUsedBlock);
+}
+
+void usermodecommand(int argc, char** argv)
+{
+    int fd1 = VFS_open("/userprog.bin", VFS_O_RDWR);
+
+    if(fd1 < 0)
+    {
+        VGA_puts("failed to open the file\n");
+        return;
+    }
+
+    VIRTMEM_mapPage ((void*)0x80000000, false);
+
+    VFS_read(fd1, (void*)0x80000000, 4095);
+    VFS_close(fd1);
+
+    // void TSS_setKernelStack(uint32_t esp0); // for syscall !!
+    switch_to_usermode(0x80000000+4095, 0x80000000);
 }
 
 void readfileCommand(int argc, char** argv)

@@ -18,15 +18,6 @@
 */
 
 #pragma once
-#include <stddef.h>
+#include <stdint.h>
 
-//============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
-//============================================================================
-
-void HEAP_initialize();
-void* sbrk(intptr_t size);
-void* kmalloc(size_t size);
-void* krealloc(void* block, size_t size);
-void* kcalloc(size_t num, size_t size);
-void kfree(void* block);
+void __attribute__((cdecl)) switch_to_usermode(uint32_t stack, uint32_t ip);

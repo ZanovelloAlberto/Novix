@@ -19,6 +19,7 @@
 
 #include <hal/gdt.h>
 #include <debug.h>
+#include <memory.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -37,6 +38,37 @@ typedef struct{
     uint16_t size;
     Gdt_entry* offset;
 }__attribute__((packed)) Gdt_descriptor;
+
+typedef struct {
+	uint32_t prev_tss; // The previous TSS - with hardware task switching these form a kind of backward linked list.
+	uint32_t esp0;     // The stack pointer to load when changing to kernel mode.
+	uint32_t ss0;      // The stack segment to load when changing to kernel mode.
+	// Everything below here is unused.
+	uint32_t esp1; // esp and ss 1 and 2 would be used when switching to rings 1 or 2.
+	uint32_t ss1;
+	uint32_t esp2;
+	uint32_t ss2;
+	uint32_t cr3;
+	uint32_t eip;
+	uint32_t eflags;
+	uint32_t eax;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t ebx;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t es;
+	uint32_t cs;
+	uint32_t ss;
+	uint32_t ds;
+	uint32_t fs;
+	uint32_t gs;
+	uint32_t ldt;
+	uint16_t trap;
+	uint16_t iomap_base;
+}__attribute__((packed)) Tss_entry;
 
 /*
 * These enumerations are here to avoid magic numbers in the code as much as possible!
@@ -92,6 +124,10 @@ typedef enum{
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
 
+
+// one task state segment
+Tss_entry g_TSS;
+
 Gdt_entry g_GDT[] = {
     // Null descriptor
     GDT_ENTRY(0, 0, 0, 0),
@@ -107,6 +143,24 @@ Gdt_entry g_GDT[] = {
               0xfffff,
               GDT_ACCESS_RW_BIT_ALLOW | GDT_ACCESS_UP_DIRECTION_BIT | GDT_ACCESS_EXECUTABLE_BIT_DATA | GDT_ACCESS_DESCRIPTOR_BIT_CODEDATA | GDT_ACCESS_DPL_RING0 | GDT_ACCESS_PRESENT_BIT,
               GDT_FLAG_LONG_MODE_CLEAR | GDT_FLAG_DB_32_BIT | GDT_FLAG_GRANULARITY_PAGE_BLOCK),
+
+    // User code segment
+    GDT_ENTRY(0, 
+        0xfffff,
+        GDT_ACCESS_RW_BIT_ALLOW | GDT_ACCESS_UP_DIRECTION_BIT | GDT_ACCESS_EXECUTABLE_BIT_CODE | GDT_ACCESS_DESCRIPTOR_BIT_CODEDATA | GDT_ACCESS_DPL_RING3 | GDT_ACCESS_PRESENT_BIT,
+        GDT_FLAG_LONG_MODE_CLEAR | GDT_FLAG_DB_32_BIT | GDT_FLAG_GRANULARITY_PAGE_BLOCK),
+
+    // User data segment
+    GDT_ENTRY(0, 
+            0xfffff,
+            GDT_ACCESS_RW_BIT_ALLOW | GDT_ACCESS_UP_DIRECTION_BIT | GDT_ACCESS_EXECUTABLE_BIT_DATA | GDT_ACCESS_DESCRIPTOR_BIT_CODEDATA | GDT_ACCESS_DPL_RING3 | GDT_ACCESS_PRESENT_BIT,
+            GDT_FLAG_LONG_MODE_CLEAR | GDT_FLAG_DB_32_BIT | GDT_FLAG_GRANULARITY_PAGE_BLOCK),
+
+    // Task state segment
+    GDT_ENTRY(0, 
+            0,
+            1 | GDT_ACCESS_RW_BIT_NOTALLOW | GDT_ACCESS_UP_DIRECTION_BIT | GDT_ACCESS_EXECUTABLE_BIT_CODE | GDT_ACCESS_DESCRIPTOR_BIT_SYSTEM | GDT_ACCESS_DPL_RING0 | GDT_ACCESS_PRESENT_BIT,
+            0),
 };
 
 Gdt_descriptor g_GDTdescriptor = {sizeof(g_GDT) - 1, g_GDT};
@@ -116,14 +170,40 @@ Gdt_descriptor g_GDTdescriptor = {sizeof(g_GDT) - 1, g_GDT};
 //============================================================================
 
 void __attribute__((cdecl)) GDT_flush(Gdt_descriptor* descriptor);
+void __attribute__((cdecl)) TSS_flush(uint8_t gdt_index);
 
 //============================================================================
 //    INTERFACE FUNCTIONS
 //============================================================================
 
+void write_tss(Gdt_entry *g)
+{
+    // Compute the base and limit of the TSS for use in the GDT entry.
+	uint32_t base = (uint32_t) &g_TSS;
+	uint32_t limit = sizeof(g_TSS) - 1;
+
+    g->limit_low = limit & 0xffff;
+    g->base_low = base & 0xffff;
+    g->base_middle = (base >> 16) & 0xff;
+    g->highLimit_flags = ((limit >> 16) & 0xf) | 0; // no flags needed
+    g->base_high = (base >> 24) & 0xff;
+
+    memset(&g_TSS, 0, sizeof(g_TSS));
+
+    g_TSS.ss0 = 2 * 8;
+    g_TSS.esp0 = 0; // this is so invalid ...
+}
+
+void TSS_setKernelStack(uint32_t esp0)
+{
+    g_TSS.esp0 = esp0;
+}
+
 void GDT_initilize()
 {
     log_info("kernel", "Initializing the GDT...");
 
+    write_tss(&g_GDT[5]);
     GDT_flush(&g_GDTdescriptor);
+    TSS_flush(5);
 }

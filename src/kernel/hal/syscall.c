@@ -17,16 +17,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include <stddef.h>
+#include <debug.h>
+#include <stdio.h>
+#include <hal/isr.h>
 
-//============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
-//============================================================================
+void SYSCALL_handler(Registers* regs)
+{
+    switch (regs->eax)
+    {
+    case 1:
+        printf("%s", (uint8_t*)regs->ebx);
+        break;
+    
+    default:
+        break;
+    }
+}
 
-void HEAP_initialize();
-void* sbrk(intptr_t size);
-void* kmalloc(size_t size);
-void* krealloc(void* block, size_t size);
-void* kcalloc(size_t num, size_t size);
-void kfree(void* block);
+void SYSCALL_initialize()
+{
+    log_info("kernel", "Initializing syscall...");
+    ISR_registerNewHandler(0x80, SYSCALL_handler);
+}

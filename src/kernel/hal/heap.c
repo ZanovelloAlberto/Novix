@@ -88,7 +88,7 @@ void HEAP_initialize()
     brk = (void*)BREAK_START_ADDR;
     lastHeapAllocatedPage = HEAP_START_ADDR;
 
-    if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage)) // first we map the freeBlockArray address
+    if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage, true)) // first we map the freeBlockArray address
     {
         log_err("kernel", "Initialization Failed!\n");
         return;
@@ -96,7 +96,7 @@ void HEAP_initialize()
 
     lastHeapAllocatedPage += PAGE_SIZE;
 
-    if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage)) // then we map the working heap address
+    if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage, true)) // then we map the working heap address
     {
         log_err("kernel", "Initialization Failed!\n");
         return;
@@ -122,7 +122,7 @@ void* sbrk(intptr_t size)
 
         if((uint32_t)(brk+size) > (lastHeapAllocatedPage + PAGE_SIZE)) // if so we will need to increase the heap size
         {
-            if(!VIRTMEM_mapPage((void*)(lastHeapAllocatedPage + PAGE_SIZE)))
+            if(!VIRTMEM_mapPage((void*)(lastHeapAllocatedPage + PAGE_SIZE), true))
                 return (void*)-1;   // not enough available memory, RAM is full or other error !
 
             lastHeapAllocatedPage += PAGE_SIZE;
@@ -316,66 +316,4 @@ void kfree(void* block)
 
         remove_ordered_array(getIndex_ordered_array(header, &freeBlockArray), &freeBlockArray); // in all case we need to remove it from the free list array
     }
-}
-
-void heapTest()
-{
-    VGA_coloredPuts("allocating 3 blocks:\n", VGA_COLOR_LIGHT_RED);
-    int* test = kmalloc(sizeof(int) * 15);
-    int* test0 = kmalloc(sizeof(int) * 10);
-    int* test1 = kmalloc(sizeof(int) * 5);
-
-    header_t *temp = head;
-
-    while(temp != NULL)
-    {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
-        temp = temp->next;
-    }
-
-    VGA_coloredPuts("freeing a block in the middle:\n", VGA_COLOR_LIGHT_RED);
-    kfree(test0); // freeing a block in the middle
-
-    temp = head;
-
-    while(temp != NULL)
-    {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
-        temp = temp->next;
-    }
-
-    VGA_coloredPuts("freeing a block to perform a merge:\n", VGA_COLOR_LIGHT_RED);
-    kfree(test); // freeing the first block
-
-    temp = head;
-
-    while(temp != NULL)
-    {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
-        temp = temp->next;
-    }
-
-    VGA_coloredPuts("allocating a block to perform a split:\n", VGA_COLOR_LIGHT_RED);
-    test0 = kmalloc(sizeof(int) * 10); // using kmalloc
-
-    temp = head;
-
-    while(temp != NULL)
-    {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
-        temp = temp->next;
-    }
-
-    VGA_coloredPuts("freeing the last block (to merge and release memory):\n", VGA_COLOR_LIGHT_RED);
-    kfree(test1);     // freeing the last block
-
-    temp = head;
-
-    while(temp != NULL)
-    {
-        printf("size: %ld, isfree: %d, starting block address: 0x%x\n",temp->size, temp->isFree, ((void*)temp+sizeof(header_t)));
-        temp = temp->next;
-    }
-
-    kfree(test0);   // free the last block
 }

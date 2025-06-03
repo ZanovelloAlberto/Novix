@@ -35,24 +35,6 @@
 #define PTE_INDEX(virt_addr) (virt_addr >> 12) & 0x3ff
 #define PDE_INDEX(virt_addr) (virt_addr >> 22) & 0x3ff
 
-typedef enum {
-    PTE_PAGE_PRESENT        = 0X1,
-    PTE_PAGE_WRITE          = 0X2,
-    PTE_PAGE_KERNEL_MODE    = 0X0,
-    PTE_PAGE_USER_MODE      = 0X4,
-}PTE_FLAGS;
-
-typedef enum {
-    PDE_PRESENT             = 0X01,
-    PDE_WRITE               = 0X02,
-    PDE_KERNEL_MODE         = 0X00,
-    PDE_USER_MODE           = 0X04,
-    PDE_PWT                 = 0X08,
-    PDE_PCD                 = 0X10,
-    PDE_4KBPAGE             = 0X00,
-    PDE_4MBPAGE             = 0X80,
-}PDE_FLAGS;
-
 //============================================================================
 //    INTERFACE FUNCTIONS
 //============================================================================
@@ -76,7 +58,7 @@ void VIRTMEM_freePage(PTE* entry)
     *entry = 0x0; // page not present
 }
 
-bool VIRTMEM_mapPage (void* virt)
+bool VIRTMEM_mapPage (void* virt, bool kernel_mode)
 {
     if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
         return false;
@@ -91,8 +73,13 @@ bool VIRTMEM_mapPage (void* virt)
         void* frame = PHYSMEM_AllocBlock(); // physical address of the page table
         if(!frame)
             return false;
-
-        page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
+        
+        if(kernel_mode)
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
+        else
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_USER_MODE);
+            
+        
         memset(page_table, 0, 0x1000);
     }
 
@@ -100,8 +87,17 @@ bool VIRTMEM_mapPage (void* virt)
     if((page_table[pageEntryIndex] & PTE_PAGE_PRESENT) == PTE_PAGE_PRESENT)
         return true; // page already mapped nothing to do
 
-    if(!VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE))
-        return false;
+    if(kernel_mode)
+    {
+        if(!VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE)) // PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE
+            return false;
+    }
+    else
+    {
+        if(!VIRTMEM_allocPage(&page_table[pageEntryIndex], PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_USER_MODE))
+            return false;
+    }
+        
     
     flushTLB(virt);
     return true;

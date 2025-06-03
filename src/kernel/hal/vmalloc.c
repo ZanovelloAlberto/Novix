@@ -202,7 +202,7 @@ void* vmalloc(size_t size)
     void* block_addr = VMALLOC_findFreeRange(block_size);
 
     for(int i = 0; i < block_size; i++)
-        VIRTMEM_mapPage (block_addr + (BLOCK_SIZE * i));
+        VIRTMEM_mapPage (block_addr + (BLOCK_SIZE * i), true);
 
     tracking_list_t* new = kmalloc(sizeof(tracking_list_t));
 

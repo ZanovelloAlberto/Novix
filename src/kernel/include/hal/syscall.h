@@ -18,15 +18,5 @@
 */
 
 #pragma once
-#include <stddef.h>
 
-//============================================================================
-//    INTERFACE FUNCTION PROTOTYPES
-//============================================================================
-
-void HEAP_initialize();
-void* sbrk(intptr_t size);
-void* kmalloc(size_t size);
-void* krealloc(void* block, size_t size);
-void* kcalloc(size_t num, size_t size);
-void kfree(void* block);
+void SYSCALL_initialize();
