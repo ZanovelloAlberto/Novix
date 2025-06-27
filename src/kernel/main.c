@@ -28,6 +28,7 @@
 #include <drivers/keyboard.h>
 #include <vfs/vfs.h>
 #include <boot_info.h>
+#include <hal/multitask.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DATA
@@ -59,6 +60,24 @@ const char logo[] =
 //    IMPLEMENTATION PRIVATE FUNCTIONS
 //============================================================================
 
+void taskA()
+{
+    for(;;)
+    {
+        log_info("taskA", "A is running !");
+        yield();
+    }
+}
+
+void taskB()
+{
+    for(;;)
+    {
+        log_info("taskB", "B is running !");
+        yield();
+    }
+}
+
 void __attribute__((cdecl)) start(Boot_info* info)
 {
     VGA_clr();
@@ -80,6 +99,12 @@ void __attribute__((cdecl)) start(Boot_info* info)
     log_warn("kernel", "warning message");
     log_err("kernel", "error message");
     log_crit("kernel", "critical message");
+
+    initialize_multitasking();
+    create_kernel_process(taskA);
+    create_kernel_process(taskB);
+    yield();
+    for(;;);
 
     while(1)
     {
