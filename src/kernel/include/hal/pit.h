@@ -27,5 +27,6 @@
 
 void PIT_initialize();
 void timer(Registers* regs);
-uint32_t getTickCount();
+void enable_multitasking();
+uint64_t getTickCount();
 void sleep(uint32_t ms);

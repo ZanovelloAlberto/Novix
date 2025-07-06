@@ -18,8 +18,10 @@
 */
 
 #include <hal/pit.h>
+#include <hal/pic.h>
 #include <hal/io.h>
 #include <debug.h>
+#include <hal/multitask.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -78,21 +80,39 @@ void PIT_initialize()
     */
 }
 
-uint32_t g_tickcount = 0;
+uint64_t g_timeSinceBoot = 0;
+bool g_enableMultitask = false;
 
 void timer(Registers* regs)
 {
-    g_tickcount++;
+    g_timeSinceBoot++;
+
+    // send EOI
+    PIC_sendEndOfInterrupt(0);
+
+    task_wakeUp();
+
+    if(g_enableMultitask)
+    {
+        if(g_timeSinceBoot % 5 == 0)
+            yield();
+    }
+        
 }
 
-uint32_t getTickCount()
+void enable_multitasking()
 {
-    return g_tickcount;
+    g_enableMultitask = true;
+}
+
+uint64_t getTickCount()
+{
+    return g_timeSinceBoot;
 }
 
 void sleep(uint32_t ms)
 {
-    uint32_t timeOut = getTickCount() + ms;
+    uint64_t timeOut = getTickCount() + ms;
 
     while (timeOut > getTickCount());
 }

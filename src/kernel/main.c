@@ -18,6 +18,8 @@
 */
 
 #include <stdio.h>
+#include <hal/io.h>
+#include <hal/pit.h>
 #include <debug.h>
 #include <drivers/vga_text.h>
 #include <stddef.h>
@@ -60,22 +62,77 @@ const char logo[] =
 //    IMPLEMENTATION PRIVATE FUNCTIONS
 //============================================================================
 
+mutex_t log;
+
+void taskC();
 void taskA()
 {
-    for(;;)
+    unlock_sheduler();
+
+    for(int i = 0; i < 5; i++)
     {
+        acquire_mutex(&log);
+        task_sleep(800);
         log_info("taskA", "A is running !");
-        yield();
+        release_mutex(&log);
+        
+        //yield();
     }
+
+    create_kernel_process(taskC);
+    terminate_task();
 }
 
+void taskD();
 void taskB()
 {
-    for(;;)
+    unlock_sheduler();
+
+    for(int i = 0; i < 10; i++)
     {
+        acquire_mutex(&log);
+        task_sleep(600);
         log_info("taskB", "B is running !");
-        yield();
+        release_mutex(&log);
+        //yield();
     }
+
+    create_kernel_process(taskD);
+    terminate_task();
+}
+
+void taskC()
+{
+    unlock_sheduler();
+
+    for(int i = 0; i < 8; i++)
+    {
+        acquire_mutex(&log);
+        task_sleep(600);
+        log_info("taskC", "C is running !");
+        release_mutex(&log);
+
+        //yield();
+    }
+    create_kernel_process(taskA);
+    terminate_task();
+}
+
+void taskD()
+{
+    unlock_sheduler();
+
+    for(int i = 0; i < 13; i++)
+    {
+        acquire_mutex(&log);
+        task_sleep(400);
+        log_info("taskD", "D is running !");
+        release_mutex(&log);
+
+        //yield();
+    }
+    create_kernel_process(taskB);
+    terminate_task();
 }
 
 void __attribute__((cdecl)) start(Boot_info* info)
@@ -103,8 +160,15 @@ void __attribute__((cdecl)) start(Boot_info* info)
     initialize_multitasking();
     create_kernel_process(taskA);
     create_kernel_process(taskB);
-    yield();
-    for(;;);
+    enable_multitasking();    // preemptive multitasking
+    //yield();
+
+    for(;;)
+    {
+        HLT();
+        //yield();
+    }
+        
 
     while(1)
     {

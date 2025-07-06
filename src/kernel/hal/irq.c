@@ -54,10 +54,10 @@ void IRQ_handler(Registers* regs)
         uint8_t pic_isr = PIC_readInServiceRegister();
         uint8_t pic_irr = PIC_readIrqRequestRegister();
         printf("Unhandled IRQ %d  ISR=%x  IRR=%x...\n", irq, pic_isr, pic_irr);
-    }
 
-    // send EOI
-    PIC_sendEndOfInterrupt(irq);
+        // send EOI
+        PIC_sendEndOfInterrupt(irq);
+    }
 }
 
 //============================================================================

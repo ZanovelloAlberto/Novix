@@ -27,11 +27,12 @@ context_switch:
 
     ; Save the context of the current task
     ; Only save the registers that the called function
-    ; must preserve (callee-saved registers)
+    ; must preserve (callee-saved registers) and flags
     push ebp
     push ebx
     push esi
     push edi
+    pushf
     
     ; Save ESP of the current task
     mov [eax + TASK_ESP_OFFSET], esp  ; eax = current task
@@ -49,6 +50,7 @@ context_switch:
 
 .sameVAS:
     ; Restore the context of the new task
+    popf
     pop edi
     pop esi
     pop ebx

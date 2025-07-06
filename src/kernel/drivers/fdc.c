@@ -21,6 +21,7 @@
 #include <hal/dma.h>
 #include <hal/irq.h>
 #include <hal/pit.h>
+#include <hal/pic.h>
 #include <hal/io.h>
 #include <hal/physmem_manager.h>
 #include <debug.h>
@@ -144,6 +145,9 @@ void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_b
 void FDC_interruptHandler(Registers regs)
 {
     g_irqFired = true;
+
+    // send EOI
+    PIC_sendEndOfInterrupt(6);
 }
 
 bool FDC_waitIrq()

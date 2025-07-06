@@ -45,3 +45,8 @@ global disableInterrupts
 disableInterrupts:
     cli
     ret
+
+global HLT
+HLT:
+    hlt
+    ret

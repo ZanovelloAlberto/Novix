@@ -18,8 +18,9 @@
 */
 
 #pragma once
+#include <stdbool.h>
 
-typedef enum status {DEAD, RUNNING, READY} status_t;
+typedef enum status {DEAD, RUNNING, READY, BLOCKED} status_t;
 
 typedef struct process
 {
@@ -32,7 +33,27 @@ typedef struct process
 	struct process *next;
 }__attribute__((packed)) process_t;
 
+typedef struct mutex
+{
+    bool locked;
+    process_t* first_waiting_list;
+    process_t* last_waiting_list;
+}mutex_t;
+
 void yield();
 void initialize_multitasking();
 void create_kernel_process(void (*task)(void));
 void __attribute__((cdecl)) context_switch(process_t* current, process_t* next);
+
+void lock_sheduler();
+void unlock_sheduler();
+
+void terminate_task();
+
+void task_sleep(uint32_t ms);
+void task_wakeUp();
+
+mutex_t* create_mutex();
+void destroy_mutex(mutex_t* mut);
+void acquire_mutex(mutex_t* mut);
+void release_mutex(mutex_t* mut);

@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <debug.h>
 #include <hal/irq.h>
+#include <hal/pic.h>
 #include <hal/io.h>
 #include <drivers/keyboard.h>
 
@@ -190,13 +191,13 @@ void KEYBOARD_interruptHandler(Registers* regs)
     if (g_scancode == 0xE0)
     {
         g_extended = true; // the next key is extended
-        return;
+        goto End;
     }
 
     if (g_scancode == 0xE1)
     {
         // handle pause key ...
-        return;
+        goto End;
     }
 
     if (g_scancode >= 0x80)
@@ -252,6 +253,10 @@ void KEYBOARD_interruptHandler(Registers* regs)
             }
         }
     }
+
+End:
+    // send EOI
+    PIC_sendEndOfInterrupt(1);
 }
 
 //============================================================================
