@@ -21,9 +21,10 @@
 #include <debug.h>
 #include <hal/pit.h>
 #include <hal/io.h>
-#include <hal/heap.h>
-#include <hal/vmalloc.h>
-#include <hal/memory_manager.h>
+#include <memmgr/heap.h>
+#include <memmgr/vmalloc.h>
+#include <memmgr/memory_manager.h>
+#include <memmgr/virtmem_manager.h>
 #include <memory.h>
 #include <hal/gdt.h>
 #include <hal/multitask.h>
@@ -173,20 +174,36 @@ void unblock_task(process_t* proc)
     unlock_sheduler();
 }
 
+void process_prelaunch()
+{
+    void (*task)(void) = (void*)(*(uint32_t*)(current_process->esp + (4 * 6)));
+
+    log_warn("prelaunch", "cr3 of the current task 0x%x", current_process->page_directory);
+    log_warn("prelaunch", "task 0x%x", task);
+    unlock_sheduler();
+
+    task();
+}
+
 void create_kernel_process(void (*task)(void))
 {
     process_t* proc = kmalloc(sizeof(process_t));
 
     proc->page_directory = getPDBR();
+    //proc->page_directory = VIRTMEM_createAddressSpace();
 
     proc->stack = vmalloc(1);
     proc->stack0 = NULL;    // it's a kernel task already
 
     proc->esp = proc->stack + 0x1000 - 4;
-    *(uint32_t*)proc->esp = (uint32_t)task; // return address after context switch
+    *(uint32_t*)proc->esp = (uint32_t)task; // argument for process_prelaunch
+
+    proc->esp -= 4;
+    *(uint32_t*)proc->esp = (uint32_t)process_prelaunch; // return address after context switch
+    
     proc->esp -= (4 * 5);   // pushed register
     *(uint32_t*)proc->esp = 0x202;       // default eflags for the new process
-
+    
     proc->id = pids++;
     proc->status = READY;
     proc->next = NULL;

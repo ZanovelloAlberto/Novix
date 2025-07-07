@@ -20,7 +20,7 @@
 #include <debug.h>
 #include <drivers/vga_text.h>
 #include <drivers/e9_port.h>
-#include <hal/heap.h>
+#include <memmgr/heap.h>
 #include <string.h>
 
 #include <vfs/vfs.h>

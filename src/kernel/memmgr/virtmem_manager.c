@@ -20,9 +20,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <debug.h>
-#include <hal/memory_manager.h>
-#include <hal/physmem_manager.h>
-#include <hal/virtmem_manager.h>
+#include <memmgr/memory_manager.h>
+#include <memmgr/physmem_manager.h>
+#include <memmgr/virtmem_manager.h>
 #include <memory.h>
 
 //============================================================================
@@ -56,6 +56,54 @@ void VIRTMEM_freePage(PTE* entry)
     PHYSMEM_freeBlock(ptr);
 
     *entry = 0x0; // page not present
+}
+
+bool VIRTMEM_mapTable(void* virt, bool kernel_mode)
+{
+    if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
+        return false;
+
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
+
+    if((page_directory[pageTableIndex] & PDE_PRESENT) != PDE_PRESENT)
+    {
+        void* frame = PHYSMEM_AllocBlock(); // physical address of the page table
+        if(!frame)
+            return false;
+        
+        if(kernel_mode)
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
+        else
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_USER_MODE);
+            
+        
+        memset(page_table, 0, 0x1000);
+    }
+
+    return true;
+}
+
+bool VIRTMEM_unMapTable(void* virt, bool kernel_mode)
+{
+    if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
+        return false;
+
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+
+    if((page_directory[pageTableIndex] & PDE_PRESENT) != PDE_PRESENT)
+        return true;    // alredy unmapped
+
+
+    void* frame = (void*)(page_directory[pageTableIndex] & 0xFFFFF000);
+    PHYSMEM_freeBlock(frame);
+    page_directory[pageTableIndex] = 0;
+
+    return true;
 }
 
 bool VIRTMEM_mapPage (void* virt, bool kernel_mode)
@@ -180,5 +228,92 @@ void VIRTMEM_initialize()
     page_directory[1023] = PAGE_ADD_ATTRIBUTE((uint32_t)page_directory, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
 
     switchPDBR(page_directory);
-    enablePaging();    // just in case ...
+    enablePaging();    // just in case ...heap
+}
+
+bool VIRTMEM_temporaryMapPageWith (void* phys, void* virt, bool kernel_mode)
+{
+    // this function should not be used unless it's temporary mapping
+    // and after usage you should always unmap the page
+
+    if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
+        return false;
+
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
+
+    if((page_directory[pageTableIndex] & PDE_PRESENT) != PDE_PRESENT)
+    {
+        void* frame = PHYSMEM_AllocBlock(); // physical address of the page table
+        if(!frame)
+            return false;
+        
+        if(kernel_mode)
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
+        else
+            page_directory[pageTableIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)frame, PDE_PRESENT | PDE_WRITE | PDE_USER_MODE);
+            
+        
+        memset(page_table, 0, 0x1000);
+    }
+
+    uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
+
+    if(kernel_mode)
+        page_table[pageEntryIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)phys, PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_KERNEL_MODE);
+    else
+        page_table[pageEntryIndex] = PAGE_ADD_ATTRIBUTE((uint32_t)phys, PTE_PAGE_PRESENT | PTE_PAGE_WRITE | PTE_PAGE_USER_MODE);
+        
+    
+    flushTLB(virt);
+    return true;
+}
+
+bool VIRTMEM_unMapTemporaryPage (void* virt)
+{
+    if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
+        return false;
+
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
+
+    if((page_directory[pageTableIndex] & PDE_PRESENT) != PDE_PRESENT)
+        return true;    // already unmapped
+
+    uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
+    if((page_table[pageEntryIndex] & PTE_PAGE_PRESENT) != PTE_PAGE_PRESENT)
+        return true; // page already unmapped nothing to do
+
+    page_table[pageEntryIndex] = 0; // no need to deallocate the phys memory it's the caller purpose
+    
+    flushTLB(virt);
+    return true;
+}
+
+uint32_t* VIRTMEM_createAddressSpace()
+{
+    PDE* page_directory = (PDE*)0xFFFFF000; // virtual addresse of the page directory
+    PDE* new_pagedirectory = PHYSMEM_AllocBlock();
+
+    PDE* temp_addr = (PDE*)0x400000;    // virtual addresse of the new page directory
+
+    // temporary map the new page directory at 4mb so we can easily modify it
+    VIRTMEM_temporaryMapPageWith(new_pagedirectory, temp_addr, true);
+
+    // the first 4mb
+    memcpy(temp_addr, page_directory, sizeof(PDE) * 1);
+
+    // the top 1gb from 3gb+
+    memcpy(temp_addr + 768, page_directory + 768, sizeof(PDE) * 255);
+    
+    // recurcive mapping here
+    temp_addr[1023] = PAGE_ADD_ATTRIBUTE((uint32_t)new_pagedirectory, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
+
+    VIRTMEM_unMapTemporaryPage(temp_addr);
+
+    return new_pagedirectory;
 }

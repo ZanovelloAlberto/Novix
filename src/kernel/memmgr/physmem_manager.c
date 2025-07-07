@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <debug.h>
-#include <hal/physmem_manager.h>
+#include <memmgr/physmem_manager.h>
 #include <memory.h>
 #include <utility.h>
 

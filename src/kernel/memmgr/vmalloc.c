@@ -18,12 +18,12 @@
 */
 
 #include <debug.h>
-#include <hal/heap.h>
+#include <memmgr/heap.h>
 #include <stdint.h>
-#include <hal/virtmem_manager.h>
+#include <memmgr/virtmem_manager.h>
 #include <memory.h>
 #include <utility.h>
-#include <hal/vmalloc.h>
+#include <memmgr/vmalloc.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -180,6 +180,11 @@ void VMALLOC_initialize()
         log_err("kernel", "Initialization failed!\n");
         return; // error
     }
+
+    // first we need to allocate all the page table for vmalloc address range
+    // because we want it to be consistent in all address space
+    for(uint32_t i =  VMALLOC_START; i <= VMALLOC_END; i += (400 * 0x1000))
+        VIRTMEM_mapTable((void*)i, true);
 
     // initialy we mark the whole memory as used
     memset(vmalloc_bitmap, 0b11111111, vmalloc_bitmapSize);

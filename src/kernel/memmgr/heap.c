@@ -20,8 +20,8 @@
 #include <debug.h>
 #include <drivers/vga_text.h>
 #include <memory.h>
-#include <hal/virtmem_manager.h>
-#include <hal/heap.h>
+#include <memmgr/virtmem_manager.h>
+#include <memmgr/heap.h>
 #include <ordered_array.h>
 
 //============================================================================
@@ -88,6 +88,11 @@ void HEAP_initialize()
     brk = (void*)BREAK_START_ADDR;
     lastHeapAllocatedPage = HEAP_START_ADDR;
 
+    // first we need to allocate all the page table for the heap address range
+    // because we want it to be consistent in all address space
+    for(uint32_t i = HEAP_START_ADDR; i <= HEAP_END_ADDR; i += (400 * 0x1000))
+        VIRTMEM_mapTable((void*)i, true);
+
     if(!VIRTMEM_mapPage((void*)lastHeapAllocatedPage, true)) // first we map the freeBlockArray address
     {
         log_err("kernel", "Initialization Failed!\n");
@@ -102,7 +107,7 @@ void HEAP_initialize()
         return;
     }
 
-    freeBlockArray = create_static_array((void*)HEAP_START_ADDR, FREEBLOCK_LIST_SIZE, criteria_function);
+    freeBlockArray = create_static_array((void*)HEAP_START_ADDR, FREEBLOCK_LIST_SIZE / sizeof(type_t), criteria_function);   // I think that the provided max size isn't correct
 }
 
 void* sbrk(intptr_t size)

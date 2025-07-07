@@ -24,9 +24,9 @@
 #include <stdbool.h>
 #include <hal/io.h>
 #include <hal/pit.h>
-#include <hal/physmem_manager.h>
-#include <hal/virtmem_manager.h>
-#include <hal/heap.h>
+#include <memmgr/physmem_manager.h>
+#include <memmgr/virtmem_manager.h>
+#include <memmgr/heap.h>
 #include <hal/usermode.h>
 #include <vfs/vfs.h>
 #include <drivers/fdc.h>

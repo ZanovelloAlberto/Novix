@@ -23,7 +23,7 @@
 #include <hal/pit.h>
 #include <hal/pic.h>
 #include <hal/io.h>
-#include <hal/physmem_manager.h>
+#include <memmgr/physmem_manager.h>
 #include <debug.h>
 #include <stddef.h>
 #include <memory.h>

@@ -22,10 +22,6 @@
 #include <hal/idt.h>
 #include <hal/isr.h>
 #include <hal/irq.h>
-#include <hal/physmem_manager.h>
-#include <hal/virtmem_manager.h>
-#include <hal/heap.h>
-#include <hal/vmalloc.h>
 #include <hal/dma.h>
 #include <hal/syscall.h>
 
@@ -39,10 +35,6 @@ void HAL_initialize(Boot_info* info)
     IDT_initilize();
     ISR_initialze();
     IRQ_initialize();
-    PHYSMEM_initialize(info);
-    VIRTMEM_initialize();
-    HEAP_initialize();
-    VMALLOC_initialize();
     DMA_enable();
     SYSCALL_initialize();
 }

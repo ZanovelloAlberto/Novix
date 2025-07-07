@@ -31,6 +31,10 @@
 #include <vfs/vfs.h>
 #include <boot_info.h>
 #include <hal/multitask.h>
+#include <memmgr/physmem_manager.h>
+#include <memmgr/virtmem_manager.h>
+#include <memmgr/heap.h>
+#include <memmgr/vmalloc.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DATA
@@ -67,7 +71,7 @@ mutex_t log;
 void taskC();
 void taskA()
 {
-    unlock_sheduler();
+    //unlock_sheduler();
 
     for(int i = 0; i < 5; i++)
     {
@@ -86,7 +90,7 @@ void taskA()
 void taskD();
 void taskB()
 {
-    unlock_sheduler();
+    //unlock_sheduler();
 
     for(int i = 0; i < 10; i++)
     {
@@ -103,7 +107,7 @@ void taskB()
 
 void taskC()
 {
-    unlock_sheduler();
+    //unlock_sheduler();
 
     for(int i = 0; i < 8; i++)
     {
@@ -120,7 +124,7 @@ void taskC()
 
 void taskD()
 {
-    unlock_sheduler();
+    //unlock_sheduler();
 
     for(int i = 0; i < 13; i++)
     {
@@ -142,6 +146,12 @@ void __attribute__((cdecl)) start(Boot_info* info)
     VGA_puts(logo);
 
     HAL_initialize(info);
+
+    PHYSMEM_initialize(info);
+    VIRTMEM_initialize();
+    HEAP_initialize();
+    VMALLOC_initialize();
+
     FDC_initialize();
     KEYBOARD_initialize();
     VFS_init();

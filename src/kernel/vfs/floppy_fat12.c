@@ -18,12 +18,12 @@
 */
 
 #include <debug.h>
-#include <hal/heap.h>
+#include <memmgr/heap.h>
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <hal/vmalloc.h>
+#include <memmgr/vmalloc.h>
 #include <vfs/vfs.h>
 #include <drivers/fdc.h>
 
