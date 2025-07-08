@@ -23,6 +23,7 @@
 #include <hal/pic.h>
 #include <hal/io.h>
 #include <drivers/keyboard.h>
+#include <scheduler/multitask.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -74,6 +75,8 @@ typedef enum{
 //============================================================================
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
+
+mutex_t* keyboard_lock;
 
 bool g_keyboard_stateDisabled = false;
 bool g_shiftPressed = false;
@@ -265,29 +268,45 @@ End:
 
 void KEYBOARD_disable()
 {
+    acquire_mutex(keyboard_lock);
+
     KEYBOARD_sendCmd(KYBRD_CTRL_CMD_REG, 0xAD);
     g_keyboard_stateDisabled = true;
+
+    release_mutex(keyboard_lock);
 }
 
 void KEYBOARD_enable()
 {
+    acquire_mutex(keyboard_lock);
+
     KEYBOARD_sendCmd(KYBRD_CTRL_CMD_REG, 0xAE);
     g_keyboard_stateDisabled = false;
+
+    release_mutex(keyboard_lock);
 }
 
 void KEYBOARD_discardLastKey()
 {
+    acquire_mutex(keyboard_lock);
     g_scancode = NULL_KEY;
+    release_mutex(keyboard_lock);
 }
 
 KEYCODE KEYBOARD_getLastKey()
 {
+    acquire_mutex(keyboard_lock);
+
     return g_scancode;
+
+    release_mutex(keyboard_lock);
 }
 
 void KEYBOARD_initialize()
 {
     log_info("kernel", "Initializing Keyboard...");
+
+    keyboard_lock = create_mutex();
 
     disableInterrupts();
     KEYBOARD_enable(); // just in case !

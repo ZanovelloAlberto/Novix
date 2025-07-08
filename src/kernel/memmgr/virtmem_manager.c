@@ -87,7 +87,7 @@ bool VIRTMEM_mapTable(void* virt, bool kernel_mode)
     return true;
 }
 
-bool VIRTMEM_unMapTable(void* virt, bool kernel_mode)
+bool VIRTMEM_unMapTable(void* virt)
 {
     if((uint32_t)virt >= 0xFFC00000) // arealdy used by recursive mapping
         return false;
@@ -175,6 +175,16 @@ bool VIRTMEM_unMapPage (void* virt)
     return true;
 }
 
+uint32_t* VIRTMEM_getPhysAddr(void* virt)
+{   
+    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
+    uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
+
+    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
+
+    return (uint32_t*)(page_table[pageEntryIndex] & 0xFFFFF000);
+}
+
 void VIRTMEM_initialize()
 {
     log_info("kernel", "Initializing virtual memory manager...");
@@ -229,17 +239,7 @@ void VIRTMEM_initialize()
     page_directory[1023] = PAGE_ADD_ATTRIBUTE((uint32_t)page_directory, PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
 
     switchPDBR(page_directory);
-    enablePaging();    // just in case ...heap
-}
-
-uint32_t* VIRTMEM_getPhysAddr(void* virt)
-{   
-    uint32_t pageTableIndex = PDE_INDEX((uint32_t)virt);
-    uint32_t pageEntryIndex = PTE_INDEX((uint32_t)virt);
-
-    PTE* page_table = (PTE*)(0xFFC00000 + (pageTableIndex << 12));   // virtuall addresse of the page table
-
-    return (uint32_t*)(page_table[pageEntryIndex] & 0xFFFFF000);
+    enablePaging();    // just in case ...
 }
 
 uint32_t* VIRTMEM_createAddressSpace()
@@ -251,10 +251,31 @@ uint32_t* VIRTMEM_createAddressSpace()
     memcpy(new_pagedirectory, page_directory, 0x1000);  // copy the page directory
 
     for(int i = 1; i < 768; i++)
-        new_pagedirectory[i] = 0;   // unmmap all the page from 4mb to 3gb
+        new_pagedirectory[i] = 0;   // unmap all the page from 4mb to 3gb
 
     // recurcive mapping here
     new_pagedirectory[1023] = PAGE_ADD_ATTRIBUTE((uint32_t)VIRTMEM_getPhysAddr(new_pagedirectory), PDE_PRESENT | PDE_WRITE | PDE_KERNEL_MODE);
 
-    return VIRTMEM_getPhysAddr(new_pagedirectory);
+    return new_pagedirectory;
+}
+
+// this function suppose that you provide a virtual address of the page directory
+void VIRTMEM_destroyAddressSpace(PDE* page_directory)
+{
+    PDE* current_page_directory = (PDE*)0xFFFFF000; // virtual addresse of the current page directory
+
+    // we need to deallocate all allocated page between 4mb and 3gb
+    // so we need to first get access of those pages
+    for(int i = 1; i < 768; i++)
+        current_page_directory[i] = page_directory[i];   // map all the page from 4mb to 3gb
+
+    // unmap pages from 4mb to 3gb
+    for(int i = 0x400000; i < 0xc0000000; i += 0x1000)
+        VIRTMEM_unMapPage((void*)i);
+
+    // unmap page tables from 4mb to 3gb
+    for(int i = 0x400000; i < 0xc0000000; i += 0x400000)
+        VIRTMEM_unMapTable((void*)i);
+
+    vfree(page_directory);
 }

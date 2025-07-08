@@ -27,7 +27,7 @@
 #include <memmgr/physmem_manager.h>
 #include <memmgr/virtmem_manager.h>
 #include <memmgr/heap.h>
-#include <hal/usermode.h>
+#include <scheduler/usermode.h>
 #include <vfs/vfs.h>
 #include <drivers/fdc.h>
 #include <memory.h>
@@ -389,7 +389,6 @@ void dumpsectorCommand(int argc, char** argv)
         for(int j = 0; j < 256; j++)
         {
             printf("0x%x ", phys_buffer[j + (c * i)]);
-            sleep(5);
         }
         puts("\n\rPress any key to continue\n\r");
         waitForKeyPress();

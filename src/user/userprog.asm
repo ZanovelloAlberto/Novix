@@ -1,4 +1,4 @@
-org 0x80000000
+org 0x400000
 bits 32
 main:
     mov eax, 0x1

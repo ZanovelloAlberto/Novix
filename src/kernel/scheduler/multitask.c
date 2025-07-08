@@ -27,7 +27,9 @@
 #include <memmgr/virtmem_manager.h>
 #include <memory.h>
 #include <hal/gdt.h>
-#include <hal/multitask.h>
+#include <vfs/vfs.h>
+#include <scheduler/usermode.h>
+#include <scheduler/multitask.h>
 
 uint64_t pids = 0;
 
@@ -141,8 +143,8 @@ void yield()
 
     if(prev != next)
     {   
-        if(next->stack0 != NULL)    // if it's a usermode process
-            TSS_setKernelStack((uint32_t)next->stack0 + 0x1000);
+        if(next->user)    // if it's a usermode process
+            TSS_setKernelStack((uint32_t)next->stack + 0x1000);
 
         context_switch(prev, next);
     }
@@ -174,37 +176,59 @@ void unblock_task(process_t* proc)
     unlock_sheduler();
 }
 
-void process_prelaunch()
+void spawn_process()
 {
-    void (*task)(void) = (void*)(*(uint32_t*)(current_process->esp + (4 * 6)));
-
-    log_warn("prelaunch", "cr3 of the current task 0x%x", current_process->page_directory);
-    log_warn("prelaunch", "task 0x%x", task);
     unlock_sheduler();
 
-    task();
+    if(current_process->user)
+    {
+        // assume we have received a path string of a file
+        char* path = (char*)(*(uint32_t*)(current_process->esp + (4 * 6)));
+        int fd1 = VFS_open(path, VFS_O_RDWR);
+
+        if(fd1 < 0)
+        {
+            log_err("spawn_process", "failed to open the file");
+            terminate_task();
+            return;
+        }
+
+        VIRTMEM_mapPage ((void*)0x400000, false);
+
+        VFS_read(fd1, (void*)0x400000, 4095);
+        VFS_close(fd1);
+
+        switch_to_usermode(0x400000+4095, 0x400000);
+    }
+    else
+    {
+        // assume we have received a pointer to the entry point of the process
+        void (*task)(void) = (void*)(*(uint32_t*)(current_process->esp + (4 * 6)));
+        task();
+    }
 }
 
-void create_kernel_process(void (*task)(void))
+void create_process(void* task, bool is_user)
 {
     process_t* proc = kmalloc(sizeof(process_t));
 
     uint32_t* pdbr = getPDBR();
-    proc->page_directory = VIRTMEM_createAddressSpace();
+    proc->virt_pdbr_addr = VIRTMEM_createAddressSpace();
+    proc->phys_pdbr_addr = VIRTMEM_getPhysAddr(proc->virt_pdbr_addr);
 
     proc->stack = vmalloc(1);
-    proc->stack0 = NULL;    // it's a kernel task already
 
     proc->esp = proc->stack + 0x1000 - 4;
-    *(uint32_t*)proc->esp = (uint32_t)task; // argument for process_prelaunch
+    *(uint32_t*)proc->esp = (uint32_t)task; // argument for spawn_process
 
     proc->esp -= 4;
-    *(uint32_t*)proc->esp = (uint32_t)process_prelaunch; // return address after context switch
+    *(uint32_t*)proc->esp = (uint32_t)spawn_process; // return address after context switch
     
     proc->esp -= (4 * 5);   // pushed register
     *(uint32_t*)proc->esp = 0x202;       // default eflags for the new process
     
     proc->id = pids++;
+    proc->user = is_user;
     proc->status = READY;
     proc->next = NULL;
 
@@ -213,14 +237,11 @@ void create_kernel_process(void (*task)(void))
 
 void delete_process(process_t* proc)
 {
-    /* for now, we do not care about user space only stack */
+    // free address space
+    VIRTMEM_destroyAddressSpace(proc->virt_pdbr_addr);
+
     if(proc->stack)
         vfree(proc->stack);
-
-    if(proc->stack0)
-        vfree(proc->stack0);
-
-    // free address space
 
     kfree(proc);
 }
@@ -262,12 +283,13 @@ void initialize_multitasking()
     idle = kmalloc(sizeof(process_t));
 
     idle->stack = NULL;     // no need to create a new stack because initially we already have one
-    idle->stack0 = NULL;    // because it's a kernel process
 
     idle->esp = NULL;       // this will be filled automatically when a context switch occurs
 
-    idle->page_directory = getPDBR();
+    idle->phys_pdbr_addr = getPDBR();
+    idle->virt_pdbr_addr = NULL;
     idle->id = pids++;
+    idle->user = false;
     idle->next = NULL;
 
     current_process = idle;
@@ -278,7 +300,6 @@ void initialize_multitasking()
     cleaner_process = kmalloc(sizeof(process_t));
 
     cleaner_process->stack = vmalloc(1);
-    cleaner_process->stack0 = NULL;
 
     cleaner_process->esp = cleaner_process->stack + 0x1000 - 4;
     *(uint32_t*)cleaner_process->esp = (uint32_t)cleaner_task; // return address after context switch
@@ -286,8 +307,10 @@ void initialize_multitasking()
     cleaner_process->esp -= (4 * 5);   // pushed register
     *(uint32_t*)cleaner_process->esp = 0x202;       // default eflags for the new process
 
-    cleaner_process->page_directory = getPDBR();
+    cleaner_process->phys_pdbr_addr = getPDBR();
+    cleaner_process->virt_pdbr_addr = NULL;
     cleaner_process->id = pids++;
+    cleaner_process->user = false;
     cleaner_process->status = BLOCKED;
     cleaner_process->next = NULL;
 }
@@ -315,7 +338,7 @@ typedef struct sleep_process
 
 sleep_process_t* sleep_list = NULL;
 
-void task_sleep(uint32_t ms)
+void sleep(uint32_t ms)
 {
     lock_sheduler();
 
@@ -362,7 +385,7 @@ End:
     yield();
 }
 
-void task_wakeUp()
+void wakeUp()
 {
     lock_sheduler();
 
@@ -389,6 +412,8 @@ mutex_t* create_mutex()
     mutex_t* mut = kmalloc(sizeof(mutex_t));
 
     mut->locked = false;
+    mut->locked_count = 0;
+    mut->owner = NULL;
     mut->first_waiting_list = NULL;
     mut->last_waiting_list = NULL;
 
@@ -404,6 +429,12 @@ void acquire_mutex(mutex_t* mut)
 {
     if(mut->locked)
     {
+        if(mut->owner == current_process)
+        {
+            mut->locked_count++;    // it's okay we can acquire a mutex multiple time
+            return; 
+        }
+        
         lock_sheduler();
         current_process->next = NULL;
 
@@ -423,11 +454,24 @@ void acquire_mutex(mutex_t* mut)
     else
     {
         mut->locked = true;
+        mut->owner = current_process;
     }
 }
 
 void release_mutex(mutex_t* mut)
 {
+    if(mut->owner != current_process)
+    {
+        log_err("mutex", "Process %d tried to release mutex it doesn't own!", current_process->id);
+        return;
+    }
+
+    if(mut->locked_count != 0)
+    {
+        mut->locked_count--;
+        return;
+    }
+
     if(mut->first_waiting_list != NULL)
     {
         lock_sheduler();
@@ -439,11 +483,14 @@ void release_mutex(mutex_t* mut)
         
         mut->first_waiting_list = mut->first_waiting_list->next;
 
+        mut->owner = released;  // new owner
+
         unblock_task(released);
         unlock_sheduler();
     }
     else
     {
         mut->locked = false;
+        mut->owner = NULL;
     }
 }

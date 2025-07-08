@@ -19,7 +19,7 @@
 
 global context_switch
 context_switch:
-    TASK_ESP_OFFSET equ 4
+    TASK_ESP_OFFSET equ 8
     TASK_CR3_OFFSET equ 0
 
     mov eax, [esp+4]    ; current process

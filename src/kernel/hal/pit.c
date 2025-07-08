@@ -21,7 +21,7 @@
 #include <hal/pic.h>
 #include <hal/io.h>
 #include <debug.h>
-#include <hal/multitask.h>
+#include <scheduler/multitask.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -90,7 +90,7 @@ void timer(Registers* regs)
     // send EOI
     PIC_sendEndOfInterrupt(0);
 
-    task_wakeUp();
+    wakeUp();   // wake up sleeping tasks
 
     if(g_enableMultitask)
     {
@@ -105,12 +105,17 @@ void enable_multitasking()
     g_enableMultitask = true;
 }
 
+bool is_multitaskingEnabled()
+{
+    return g_enableMultitask;
+}
+
 uint64_t getTickCount()
 {
     return g_timeSinceBoot;
 }
 
-void sleep(uint32_t ms)
+void spin_sleep(uint32_t ms)
 {
     uint64_t timeOut = getTickCount() + ms;
 

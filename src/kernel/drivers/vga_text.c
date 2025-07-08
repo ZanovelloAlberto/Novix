@@ -20,8 +20,10 @@
 
 #include <drivers/vga_text.h>
 #include <hal/io.h>
+#include <scheduler/multitask.h>
 
 #include <stdbool.h>
+#include <stddef.h>
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE DEFINITIONS / ENUMERATIONS / SIMPLE TYPEDEFS
@@ -33,6 +35,14 @@
 //============================================================================
 //    IMPLEMENTATION PRIVATE DATA
 //============================================================================
+
+mutex_t vga_lock = {
+    .owner = NULL,
+    .locked_count = 0,
+    .locked = false,
+    .last_waiting_list = NULL,
+    .first_waiting_list = NULL
+};
 
 uint16_t column = 0;
 uint16_t line = 0;
@@ -103,12 +113,16 @@ static void scrollUp()
 
 void VGA_setCurrentColor(VGA_COLOR foreground)
 {
+    acquire_mutex(&vga_lock);
     currentColor = (foreground << 8) | (background << 12);
+    release_mutex(&vga_lock);
 }
 
 void VGA_setColorToDefault()
 {
+    acquire_mutex(&vga_lock);
     currentColor = defaultColor;
+    release_mutex(&vga_lock);
 }
 
 void VGA_moveCursorTo(uint16_t new_line, uint16_t new_column)
@@ -116,9 +130,11 @@ void VGA_moveCursorTo(uint16_t new_line, uint16_t new_column)
     if(new_line >= HEIGHT || new_column >= WIDTH)
         return;
 
+    acquire_mutex(&vga_lock);
     line = new_line;
     column = new_column;
     updateCursor();
+    release_mutex(&vga_lock);
 }
 
 uint16_t VGA_getCurrentLine()
@@ -136,6 +152,7 @@ uint16_t VGA_getCurrentColumn()
 */
 void VGA_clr()
 {
+    acquire_mutex(&vga_lock);
     line = 0;
     column = 0;
     currentColor = defaultColor;
@@ -147,6 +164,7 @@ void VGA_clr()
     }
 
     updateCursor();
+    release_mutex(&vga_lock);
 }
 
 /** VGA_puts:
@@ -155,18 +173,22 @@ void VGA_clr()
 */
 void VGA_puts(const char* s)
 {
+    acquire_mutex(&vga_lock);
     while(*s){
         VGA_putc(*s);
         s++;
         updateCursor();
     }
+    release_mutex(&vga_lock);
 }
 
 void VGA_coloredPuts(const char* s, VGA_COLOR foreground)
 {
+    acquire_mutex(&vga_lock);
     VGA_setCurrentColor(foreground);
     VGA_puts(s);
     VGA_setColorToDefault();
+    release_mutex(&vga_lock);
 }
 
 /** VGA_putc:
@@ -175,8 +197,8 @@ void VGA_coloredPuts(const char* s, VGA_COLOR foreground)
 */
 void VGA_putc(const char c)
 {
-    
-        switch(c){
+    acquire_mutex(&vga_lock);
+    switch(c){
         case '\n':
             newLine();
             break;
@@ -216,4 +238,5 @@ void VGA_putc(const char c)
         break;
     }
     updateCursor();
+    release_mutex(&vga_lock);
 }

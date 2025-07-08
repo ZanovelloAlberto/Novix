@@ -30,7 +30,7 @@
 #include <drivers/keyboard.h>
 #include <vfs/vfs.h>
 #include <boot_info.h>
-#include <hal/multitask.h>
+#include <scheduler/multitask.h>
 #include <memmgr/physmem_manager.h>
 #include <memmgr/memory_manager.h>
 #include <memmgr/virtmem_manager.h>
@@ -76,15 +76,13 @@ void taskA()
 
     for(int i = 0; i < 5; i++)
     {
-        acquire_mutex(&log);
-        task_sleep(800);
+        sleep(600);
         log_info("taskA", "A is running !");
-        release_mutex(&log);
         
         //yield();
     }
 
-    create_kernel_process(taskC);
+    create_process(taskC, false);
     terminate_task();
 }
 
@@ -95,14 +93,12 @@ void taskB()
 
     for(int i = 0; i < 10; i++)
     {
-        acquire_mutex(&log);
-        task_sleep(600);
+        sleep(400);
         log_info("taskB", "B is running !");
-        release_mutex(&log);
         //yield();
     }
 
-    create_kernel_process(taskD);
+    create_process(taskD, false);
     terminate_task();
 }
 
@@ -112,14 +108,12 @@ void taskC()
 
     for(int i = 0; i < 8; i++)
     {
-        acquire_mutex(&log);
-        task_sleep(600);
+        sleep(400);
         log_info("taskC", "C is running !");
-        release_mutex(&log);
 
         //yield();
     }
-    create_kernel_process(taskA);
+    create_process(taskA, false);
     terminate_task();
 }
 
@@ -129,30 +123,20 @@ void taskD()
 
     for(int i = 0; i < 13; i++)
     {
-        acquire_mutex(&log);
-        task_sleep(400);
+        sleep(200);
         log_info("taskD", "D is running !");
-        release_mutex(&log);
 
         //yield();
     }
-    create_kernel_process(taskB);
+    create_process(taskB, false);
     terminate_task();
 }
 
-void __attribute__((cdecl)) start(Boot_info* info)
+void init_process()
 {
     VGA_clr();
-
     VGA_puts(logo);
-
-    HAL_initialize(info);
-
-    PHYSMEM_initialize(info);
-    VIRTMEM_initialize();
-    HEAP_initialize();
-    VMALLOC_initialize();
-
+    
     FDC_initialize();
     KEYBOARD_initialize();
     VFS_init();
@@ -160,17 +144,24 @@ void __attribute__((cdecl)) start(Boot_info* info)
     if(VFS_mount("fat12", "/") != VFS_OK)
         printf("error while mounting at /!\n");
 
-    VGA_putc('\n');
+    create_process(taskA, false);
+    create_process(taskB, false);
+    create_process("/userprog.bin", true);
 
-    log_debug("kernel", "debug message");
-    log_info("kernel", "info message");
-    log_warn("kernel", "warning message");
-    log_err("kernel", "error message");
-    log_crit("kernel", "critical message");
+    terminate_task();
+}
+
+void __attribute__((cdecl)) start(Boot_info* info)
+{
+    HAL_initialize(info);
+
+    PHYSMEM_initialize(info);
+    VIRTMEM_initialize();
+    HEAP_initialize();
+    VMALLOC_initialize();
 
     initialize_multitasking();
-    create_kernel_process(taskA);
-    create_kernel_process(taskB);
+    create_process(init_process, false);
     enable_multitasking();    // preemptive multitasking
     //yield();
 

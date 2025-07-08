@@ -24,6 +24,7 @@
 #include <hal/pic.h>
 #include <hal/io.h>
 #include <memmgr/physmem_manager.h>
+#include <scheduler/multitask.h>
 #include <debug.h>
 #include <stddef.h>
 #include <memory.h>
@@ -117,6 +118,7 @@ typedef enum {
 bool g_irqFired = false;
 uint8_t g_currentDrive = 0;
 uint32_t* fdc_buffer = NULL;
+mutex_t* fdc_lock;
 
 //============================================================================
 //    IMPLEMENTATION PRIVATE FUNCTION PROTOTYPES
@@ -153,10 +155,7 @@ void FDC_interruptHandler(Registers regs)
 bool FDC_waitIrq()
 {
     uint32_t timeout = TIMEOUT;
-    while (!g_irqFired && timeout--)
-    {
-        sleep(1); // sleep 1ms
-    }
+    while (!g_irqFired && timeout--);
 
     if (timeout == 0)
         return false; // timed out
@@ -210,7 +209,6 @@ bool FDC_sendCommand(uint8_t cmd)
             outb(FDC_PORT_FIFO, cmd);
             return true;
         }
-        sleep(1);
     }
 
     return false; // timed out
@@ -228,8 +226,6 @@ uint8_t FDC_readData()
         {
             return inb(FDC_PORT_FIFO);
         }
-
-        sleep(1); // sleep 1ms
     }
 
     return -1; // timed out
@@ -295,7 +291,7 @@ void FDC_controlMotor(bool is_on)
         FDC_writeDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
 
 	// in all cases; wait a little bit for the motor to spin up/turn off
-	sleep(50);
+    sleep(50);
 }
 
 void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_buffer)
@@ -333,17 +329,27 @@ void FDC_sectorRead(uint8_t head, uint8_t track, uint8_t sector, uint32_t phys_b
 
 void FDC_disableController()
 {
+    acquire_mutex(fdc_lock);
+
 	FDC_writeDor(0);
+
+    release_mutex(fdc_lock);
 }
 
 void FDC_enableController()
 {
+    acquire_mutex(fdc_lock);
+
 	FDC_writeDor(g_currentDrive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
+
+    release_mutex(fdc_lock);
 }
 
 bool FDC_calibrate()
 {
 	uint32_t st0, cyl;
+
+    acquire_mutex(fdc_lock);
 
 	// turn on the motor
 	FDC_controlMotor(true);
@@ -360,11 +366,13 @@ bool FDC_calibrate()
 		if (!cyl)
         {
             FDC_controlMotor(false);
+            release_mutex(fdc_lock);
 			return true;
         }
 	}
 
     FDC_controlMotor(false);
+    release_mutex(fdc_lock);
 	return false;
 }
 
@@ -373,13 +381,17 @@ void FDC_setCurrentDrive(uint8_t drive)
     if(drive >= 4)
         return;
 
+    acquire_mutex(fdc_lock);
     FDC_writeDor(drive | FDC_DOR_MASK_RESET | FDC_DOR_MASK_DMA);
     g_currentDrive = drive;
+    release_mutex(fdc_lock);
 }
 
 void FDC_resetController()
 {
 	uint32_t st0, cyl;
+
+    acquire_mutex(fdc_lock);
 
 	// reset the controller
 	FDC_disableController();
@@ -398,11 +410,15 @@ void FDC_resetController()
 
 	// calibrate the disk
 	FDC_calibrate();
+
+    release_mutex(fdc_lock);
 }
 
 bool FDC_seek(uint32_t cyl, uint32_t head)
 {
 	uint32_t st0, cyl0;
+
+    acquire_mutex(fdc_lock);
 
 	for (int i = 0; i < 10; i++ ) {
 
@@ -417,9 +433,14 @@ bool FDC_seek(uint32_t cyl, uint32_t head)
 
 		// found the cylinder?
 		if (cyl0 == cyl)
-			return true;
+        {
+            release_mutex(fdc_lock);
+            return true;
+        }
+			
 	}
 
+    release_mutex(fdc_lock);
 	return false;
 }
 
@@ -439,16 +460,15 @@ void FDC_readSectors(void* buffer, uint16_t lba, uint8_t sector_count)
 {
     uint16_t cylinder, sector, head;
 
-    if(sector_count > 128)
-        return;     // cannot read we only have 64k of buffer
+    if(sector_count > 128 || (lba + sector_count) > 2880)
+        return;     // cannot read we only have 64k of buffer or out of range !
 
+    acquire_mutex(fdc_lock);
     FDC_controlMotor(true);
 
     for (size_t i = 0; i < sector_count; i++)
     {
         lba = lba + i;
-        if(lba > 2880)
-            return;  // out of range !
         
         fdc_lba2chs(lba, &cylinder, &sector, &head);
         FDC_seek(cylinder, head);
@@ -458,11 +478,14 @@ void FDC_readSectors(void* buffer, uint16_t lba, uint8_t sector_count)
     FDC_controlMotor(false);
 
     memcpy(buffer, fdc_buffer, sector_count*512);
+    release_mutex(fdc_lock);
 }
 
 void FDC_initialize()
 {
     log_info("kernel", "Initializing FDC...");
+
+    fdc_lock = create_mutex();
 
     fdc_buffer = (uint32_t*)PHYSMEM_AllocBlocks(FDC_BUFFER_BLOCKSIZE); // Let’s hope it doesn’t go over 16MB.
 

@@ -17,9 +17,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <stddef.h>
 #include <hal/io.h>
+#include <hal/pit.h>
+#include <scheduler/multitask.h>
+
+mutex_t e9_lock = {
+    .owner = NULL,
+    .locked_count = 0,
+    .locked = false,
+    .last_waiting_list = NULL,
+    .first_waiting_list = NULL
+};
 
 void E9_putc(char c)
 {
+    if(is_multitaskingEnabled())
+        acquire_mutex(&e9_lock);
+    
     outb(0xE9, c);
+    
+    if(is_multitaskingEnabled())
+        release_mutex(&e9_lock);
 }

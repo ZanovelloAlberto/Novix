@@ -18,6 +18,7 @@
 */
 
 #pragma once
+#include <stdbool.h>
 #include <stdint.h>
 #include <hal/irq.h>
 
@@ -28,5 +29,6 @@
 void PIT_initialize();
 void timer(Registers* regs);
 void enable_multitasking();
+bool is_multitaskingEnabled();
 uint64_t getTickCount();
-void sleep(uint32_t ms);
+void spin_sleep(uint32_t ms);

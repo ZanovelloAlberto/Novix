@@ -19,16 +19,18 @@
 
 #pragma once
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum status {DEAD, RUNNING, READY, BLOCKED} status_t;
 
 typedef struct process
 {
-    void* page_directory;
+    void* phys_pdbr_addr;
+    void* virt_pdbr_addr;
 	void* esp;
     void* stack;
-    void* stack0;
     int id;
+    bool user;
     status_t status;
 	struct process *next;
 }__attribute__((packed)) process_t;
@@ -36,13 +38,15 @@ typedef struct process
 typedef struct mutex
 {
     bool locked;
+    int locked_count;
+    process_t* owner;
     process_t* first_waiting_list;
     process_t* last_waiting_list;
 }mutex_t;
 
 void yield();
 void initialize_multitasking();
-void create_kernel_process(void (*task)(void));
+void create_process(void* task, bool is_user);
 void __attribute__((cdecl)) context_switch(process_t* current, process_t* next);
 
 void lock_sheduler();
@@ -50,8 +54,8 @@ void unlock_sheduler();
 
 void terminate_task();
 
-void task_sleep(uint32_t ms);
-void task_wakeUp();
+void sleep(uint32_t ms);
+void wakeUp();
 
 mutex_t* create_mutex();
 void destroy_mutex(mutex_t* mut);

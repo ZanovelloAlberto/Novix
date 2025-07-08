@@ -52,9 +52,10 @@ typedef enum {
 //============================================================================
 
 void VIRTMEM_initialize();
+uint32_t* VIRTMEM_getPhysAddr(void* virt);
 
 bool VIRTMEM_mapTable(void* virt, bool kernel_mode);
-bool VIRTMEM_unMapTable(void* virt, bool kernel_mode);
+bool VIRTMEM_unMapTable(void* virt);
 
 bool VIRTMEM_mapPage (void* virt, bool kernel_mode);
 bool VIRTMEM_unMapPage (void* virt);
@@ -63,3 +64,4 @@ void VIRTMEM_freePage(PTE* entry);
 bool VIRTMEM_allocPage(PTE* entry, uint32_t flags);
 
 uint32_t* VIRTMEM_createAddressSpace();
+void VIRTMEM_destroyAddressSpace(PDE* page_directory);
