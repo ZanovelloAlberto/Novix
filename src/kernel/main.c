@@ -32,6 +32,7 @@
 #include <boot_info.h>
 #include <hal/multitask.h>
 #include <memmgr/physmem_manager.h>
+#include <memmgr/memory_manager.h>
 #include <memmgr/virtmem_manager.h>
 #include <memmgr/heap.h>
 #include <memmgr/vmalloc.h>

@@ -189,8 +189,8 @@ void create_kernel_process(void (*task)(void))
 {
     process_t* proc = kmalloc(sizeof(process_t));
 
-    proc->page_directory = getPDBR();
-    //proc->page_directory = VIRTMEM_createAddressSpace();
+    uint32_t* pdbr = getPDBR();
+    proc->page_directory = VIRTMEM_createAddressSpace();
 
     proc->stack = vmalloc(1);
     proc->stack0 = NULL;    // it's a kernel task already
