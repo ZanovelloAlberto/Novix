@@ -3,12 +3,11 @@ BUILD_DIR?=build
 ASM?=nasm
 ASMFLAGS= -f elf
 
-LIBGCC_PATH?=/home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
-CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
-CFLAG=-ffreestanding -nostdlib -std=c99 -g -I $(abspath $(LIBGCC_PATH))
+CC?=zig cc -target i686-elf
+CFLAG=-m32 -march=i386 -ffreestanding -nostdlib -std=c99 -g -fno-stack-protector
 
-LD?=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LDFLAG=-T linker.ld -nostdlib -L $(LIBGCC_PATH)
+LD?=zig cc -target i686-elf
+LDFLAG=-nostdlib
 
 SOURCES_C=$(wildcard *.c)
 OBJECTS_C=$(patsubst %.c, $(BUILD_DIR)/lib/c/%.obj, $(SOURCES_C))

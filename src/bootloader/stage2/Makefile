@@ -4,11 +4,11 @@ LIB_DIR?=lib
 ASM?=nasm
 ASMFLAGS= -f elf
 
-LIBGCC_PATH?=/home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
-CC?=/home/novice/cross/i686-elf/bin/i686-elf-gcc
+LIBGCC_PATH?=/nix/store/n6yf7xc6rwraipijrwr5330wg1k366f4-i686-elf-gcc-12.3.0/lib/gcc/i686-elf/12.3.0
+CC?=i686-elf-gcc
 CFLAG=-ffreestanding -nostdlib -std=c99 -g -I $(LIB_DIR)
 
-LD?=/home/novice/cross/i686-elf/bin/i686-elf-ld
+LD?=i686-elf-ld
 LDFLAG=-T linker.ld -nostdlib -L $(LIBGCC_PATH)
 
 

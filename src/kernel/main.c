@@ -73,12 +73,10 @@ void taskC();
 void taskA()
 {
     //unlock_sheduler();
-
     for(int i = 0; i < 5; i++)
     {
         sleep(600);
         log_info("taskA", "A is running !");
-        
         //yield();
     }
 
@@ -154,12 +152,10 @@ void init_process()
 void __attribute__((cdecl)) start(Boot_info* info)
 {
     HAL_initialize(info);
-
     PHYSMEM_initialize(info);
     VIRTMEM_initialize();
     HEAP_initialize();
     VMALLOC_initialize();
-
     initialize_multitasking();
     create_process(init_process, false);
     enable_multitasking();    // preemptive multitasking
@@ -175,13 +171,10 @@ void __attribute__((cdecl)) start(Boot_info* info)
     while(1)
     {
         VGA_coloredPuts("root@host> ", VGA_COLOR_WHITE);
-
         //reading
         shellRead();
-
         //parsing
         shellParse();
-        
         //execute
         shellExecute();
     }

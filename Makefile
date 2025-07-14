@@ -2,9 +2,9 @@ BUILD_DIR=build
 SRC_DIR=src
 FAT=mkfs.fat
 ASM=nasm
-CC=/home/novice/cross/i686-elf/bin/i686-elf-gcc
-LD=/home/novice/cross/i686-elf/bin/i686-elf-ld
-LIBGCC_PATH= /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
+CC=zig cc
+LD=i686-elf-ld
+# LIBGCC_PATH= /home/novice/cross/i686-elf/lib/gcc/i686-elf/14.2.0
 LIB_DIR=$(abspath $(SRC_DIR)/lib/)
 
 export FAT
@@ -19,6 +19,7 @@ export LIB_DIR
 #
 
 floppy_image: $(BUILD_DIR)/main.img
+	echo hi
 
 $(BUILD_DIR)/main.img: lib bootloader kernel
 	dd if=/dev/zero of=$(BUILD_DIR)/main.img bs=512 count=2880
