@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
 
     const kernel = b.addExecutable(.{
         .name = "kernel.elf",
-        .root
+        // .root = b.path("./src/")
         // .root_source_file = b.path("src/main.zig"),
         .target = b.resolveTargetQuery(target_query),
         .optimize = optimize,
