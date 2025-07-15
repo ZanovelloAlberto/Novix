@@ -8,6 +8,7 @@ pkgs.mkShell {
     # dosfstools # Provides mkfs.fat
     # zig_0_13
     zls
+    gemini-cli
     
     # crossPkgs.stdenv.cc
     # binutils # Provides ld (linker), though we'll configure for i686-elf
