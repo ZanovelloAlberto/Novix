@@ -47,7 +47,7 @@ pub const IdtPtr = packed struct {
     base: u32,
 };
 
-pub const InterruptHandler = fn () callconv(.Naked) void;
+pub const InterruptHandler = *const fn () callconv(.Naked) void;
 
 /// The error set for the IDT
 pub const IdtError = error{

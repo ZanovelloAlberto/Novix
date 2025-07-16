@@ -30,13 +30,13 @@ pub fn Bitmap(comptime num_entries: ?usize, comptime BitmapType: type) type {
         const static = num_entries != null;
 
         /// The number of entries that one bitmap type can hold. Evaluates to the number of bits the type has
-        pub const ENTRIES_PER_BITMAP: usize = std.meta.bitCount(BitmapType);
+        pub const ENTRIES_PER_BITMAP: usize = @bitSizeOf(BitmapType);
 
         /// The value that a full bitmap will have
         pub const BITMAP_FULL = std.math.maxInt(BitmapType);
 
         /// The type of an index into a bitmap entry. The smallest integer needed to represent all bit positions in the bitmap entry type
-        pub const IndexType = std.meta.Int(.unsigned, std.math.log2(std.math.ceilPowerOfTwo(u16, std.meta.bitCount(BitmapType)) catch unreachable));
+        pub const IndexType = std.meta.Int(.unsigned, std.math.log2(std.math.ceilPowerOfTwo(u16, std.math.popCount(BitmapType)) catch unreachable));
 
         num_bitmaps: usize,
         num_entries: usize,
@@ -69,7 +69,7 @@ pub fn Bitmap(comptime num_entries: ?usize, comptime BitmapType: type) type {
                     .allocator = null,
                 };
             } else {
-                const n = std.mem.alignForward(num, ENTRIES_PER_BITMAP) / ENTRIES_PER_BITMAP;
+                const n = std.mem.alignForward(usize, num, ENTRIES_PER_BITMAP) / ENTRIES_PER_BITMAP;
                 const self = Self{
                     .num_bitmaps = n,
                     .num_entries = num,
@@ -205,7 +205,7 @@ pub fn Bitmap(comptime num_entries: ?usize, comptime BitmapType: type) type {
                     if (entry >= self.num_entries) {
                         return null;
                     }
-                    if ((bmp & @as(BitmapType, 1) << bit) != 0) {
+                    if ((bmp & @as(BitmapType, 1) << @as(IndexType, bit)) != 0) {
                         // This is a one so clear the progress
                         count = 0;
                         start = null;

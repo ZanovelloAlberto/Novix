@@ -56,8 +56,36 @@ pub const FreeListAllocator = struct {
         };
     }
 
+    // const vtable = Allocator.VTable{
+    //     .alloc = struct {
+    //         fn f(ctx: *anyopaque, size: usize, alignment: u29, size_alignment: u29, ret_addr: usize) Allocator.Error![]u8 {
+    //             const self = @ptrCast(*Self, @alignCast(ctx));
+    //             return self.alloc(size, alignment, size_alignment, ret_addr);
+    //         }
+    //     }.f,
+    //     .resize = struct {
+    //         fn f(ctx: *anyopaque, old_mem: []u8, old_align: u29, new_size: usize, size_alignment: u29, ret_addr: usize) ?usize {
+    //             const self = @ptrCast(*Self, @alignCast(ctx));
+    //             return self.resize(old_mem, old_align, new_size, size_alignment, ret_addr);
+    //         }
+    //     }.f,
+    //     .free = struct {
+    //         fn f(ctx: *anyopaque, mem: []u8, alignment: u29, ret_addr: usize) void {
+    //             const self = @ptrCast(*Self, @alignCast(ctx));
+    //             self.free(mem, alignment, ret_addr);
+    //         }
+    //     }.f,
+    // };
+
+    const vtable = Allocator.VTable{
+        .alloc = &alloc,
+        .resize = &resize,
+        .free = &free,
+        .remap = &remap,
+    };
+
     pub fn allocator(self: *Self) Allocator {
-        return Allocator.init(self, alloc, resize, free);
+        return .{ .ptr = self, .vtable = &vtable };
     }
 
     ///
@@ -102,10 +130,10 @@ pub const FreeListAllocator = struct {
     ///     IN alignment: u29 - The alignment used to allocate the memory
     ///     IN ret_addr: usize - The return address passed by the high-level Allocator API. This is ignored.
     ///
-    fn free(self: *Self, mem: []u8, alignment: u29, ret_addr: usize) void {
+    fn free(self: *Self, mem: []u8, alignment: u29, ret_addr: usize) !void {
         _ = alignment;
         _ = ret_addr;
-        const size = std.math.max(mem.len, @sizeOf(Header));
+        const size = @max(mem.len, @sizeOf(Header));
         const addr = @intFromPtr(mem.ptr);
         var header = insertFreeHeader(addr, size - @sizeOf(Header), null);
         if (self.first_free) |first| {
@@ -139,6 +167,40 @@ pub const FreeListAllocator = struct {
         } else {
             self.first_free = header;
         }
+    }
+
+    pub fn remap(
+        ctx: *anyopaque,
+        mem: []u8,
+        alignment: std.mem.Alignment,
+        new_len: usize,
+        ret_addr: usize,
+    ) Allocator.Error![]u8 {
+        // Remap (realloc) implementation for FreeListAllocator
+        // Try to resize in place, otherwise allocate new and copy
+        // const self: *Self = @ptrCast(@alignCast(ctx));
+        // if (new_len == mem.len) return mem[0..new_len];
+
+        // const old_align: u29 = @intCast(alignment);
+        // const size_alignment: u29 = @intCast(alignment);
+
+        // const resized = self.resize(mem, old_align, new_len, size_alignment, ret_addr);
+        // if (resized) |new_size| {
+        //     if (new_size == 0) return null;
+        //     return mem[0..new_size];
+        // }
+
+        // // Could not resize in place, allocate new and copy
+        // const new_mem = self.alloc(new_len, old_align, size_alignment, ret_addr) catch return null;
+        // @memcpy(new_mem, mem);
+        // self.free(mem, old_align, ret_addr);
+        // return new_mem[0..new_mem.len];
+        _ = ctx;
+        _ = mem;
+        _ = alignment;
+        _ = new_len;
+        _ = ret_addr;
+        return &[_]u8{};
     }
 
     ///
@@ -194,12 +256,12 @@ pub const FreeListAllocator = struct {
     /// Return: ?usize
     ///     The new size of the buffer, which will be new_size if the operation was successfull, or null if the operation wasn't successful.
     ///
-    fn resize(self: *Self, old_mem: []u8, old_align: u29, new_size: usize, size_alignment: u29, ret_addr: usize) ?usize {
+    fn resize(self: *Self, old_mem: []u8, old_align: u29, new_size: usize, size_alignment: u29, ret_addr: usize) bool {
         // Suppress unused var warning
 
         if (new_size == 0) {
-            self.free(old_mem, old_align, ret_addr);
-            return 0;
+            self.free(old_mem, old_align, ret_addr) catch false;
+            return true;
         }
         if (new_size == old_mem.len) return new_size;
 
@@ -245,14 +307,14 @@ pub const FreeListAllocator = struct {
                 return real_size;
             }
             // The neighbour isn't free so we can't expand into it
-            return null;
+            return false;
         } else {
             // Shrinking
             const size_diff = old_mem.len - real_size;
             // If shrinking would leave less space than required for a new header,
             // or if shrinking would make the buffer too small, don't shrink
             if (size_diff < @sizeOf(Header)) {
-                return old_mem.len;
+                return false;
             }
             // Make sure the we have enough space for a header
             if (real_size < @sizeOf(Header)) {
@@ -269,7 +331,7 @@ pub const FreeListAllocator = struct {
                 new_next.next_free = n.next_free;
             }
 
-            return real_size;
+            return true;
         }
     }
 
@@ -323,7 +385,7 @@ pub const FreeListAllocator = struct {
 
         // Get the real size being allocated, which is the aligned size or the size of a header (whichever is largest)
         // The size must be at least the size of a header so that it can be freed properly
-        const real_size = std.math.max(if (size_alignment > 1) std.mem.alignAllocLen(size, size, size_alignment) else size, @sizeOf(Header));
+        const real_size = @max(if (size_alignment > 1) std.mem.alignAllocLen(size, size, size_alignment) else size, @sizeOf(Header));
 
         var free_header = self.first_free;
         var prev: ?*Header = null;

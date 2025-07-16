@@ -184,7 +184,7 @@ pub fn toErrorCode(err: anyerror) u16 {
 ///     The error raised by the handler
 ///
 pub fn handle(syscall: Syscall, ctx: *const arch.CpuState, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) anyerror!usize {
-    return try syscall.getHandler()(ctx, arg1, arg2, arg3, arg4, arg5);
+    return syscall.getHandler()(ctx, arg1, arg2, arg3, arg4, arg5);
 }
 
 ///

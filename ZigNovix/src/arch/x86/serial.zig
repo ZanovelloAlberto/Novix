@@ -129,9 +129,9 @@ pub fn init(baud: u32, port: Port) SerialError!void {
         panic(@errorReturnTrace(), "Failed to initialise serial output setup: {}", .{e});
     });
     // Send the divisor's lsb
-    arch.out(port_int, @truncate(divisor));
+    arch.out(port_int, @as(u8, @truncate(divisor)));
     // Send the divisor's msb
-    arch.out(port_int + 1, @truncate(divisor >> 8));
+    arch.out(port_int + 1, @as(u8, @truncate(divisor >> 8)));
     // Send the properties to use
     arch.out(port_int + LCR, lcrValue(CHAR_LEN, SINGLE_STOP_BIT, PARITY_BIT, 0) catch |e| {
         panic(@errorReturnTrace(), "Failed to setup serial properties: {}", .{e});

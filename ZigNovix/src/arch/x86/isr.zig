@@ -22,7 +22,7 @@ pub const IsrError = error{
 };
 
 /// The type of a ISR handler. A function that takes a interrupt context and returns void.
-const IsrHandler = fn (*arch.CpuState) usize;
+const IsrHandler = *const fn (*arch.CpuState) usize;
 
 /// The number of ISR entries.
 const NUMBER_OF_ENTRIES: u8 = 32;

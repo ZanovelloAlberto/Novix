@@ -25,7 +25,7 @@ pub const IrqError = error{
 const NUMBER_OF_ENTRIES: u16 = 16;
 
 /// The type of a IRQ handler. A function that takes a interrupt context and returns void.
-const IrqHandler = fn (*arch.CpuState) usize;
+const IrqHandler = *const fn (*arch.CpuState) usize;
 
 // The offset from the interrupt number where the IRQs are.
 pub const IRQ_OFFSET: u16 = 32;

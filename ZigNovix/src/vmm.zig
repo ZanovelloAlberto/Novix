@@ -72,7 +72,7 @@ pub fn Mapper(comptime Payload: type) type {
         /// Error: AllocatorError || MapperError
         ///     The causes depend on the mapper used
         ///
-        mapFn: fn (virtual_start: usize, virtual_end: usize, physical_start: usize, physical_end: usize, attrs: Attributes, allocator: Allocator, spec: Payload) (Allocator.Error || MapperError)!void,
+        mapFn: *const fn (virtual_start: usize, virtual_end: usize, physical_start: usize, physical_end: usize, attrs: Attributes, allocator: Allocator, spec: Payload) (Allocator.Error || MapperError)!void,
 
         ///
         /// Unmap a region (can span more than one block) of virtual memory from its physical memory. After a call to this function, the memory should not be accessible without error.
@@ -86,7 +86,7 @@ pub fn Mapper(comptime Payload: type) type {
         /// Error: MapperError
         ///     The causes depend on the mapper used
         ///
-        unmapFn: fn (virtual_start: usize, virtual_end: usize, allocator: Allocator, spec: Payload) MapperError!void,
+        unmapFn: *const fn (virtual_start: usize, virtual_end: usize, allocator: Allocator, spec: Payload) MapperError!void,
     };
 }
 
@@ -173,7 +173,7 @@ pub fn VirtualMemoryManager(comptime Payload: type) type {
         ///
         pub fn init(start: usize, end: usize, allocator: Allocator, mapper: Mapper(Payload), payload: Payload) Allocator.Error!Self {
             const size = end - start;
-            const bmp = try bitmap.Bitmap(null, usize).init(std.mem.alignForward(size, pmm.BLOCK_SIZE) / pmm.BLOCK_SIZE, allocator);
+            const bmp = try bitmap.Bitmap(null, usize).init(std.mem.alignForward(usize, size, pmm.BLOCK_SIZE) / pmm.BLOCK_SIZE, allocator);
             return Self{
                 .bmp = bmp,
                 .start = start,
@@ -566,18 +566,12 @@ pub fn init(mem_profile: *const mem.MemProfile, allocator: Allocator) Allocator.
 
     // Map all the reserved virtual addresses.
     for (mem_profile.virtual_reserved) |entry| {
-        const virtual = mem.Range{
-            .start = std.mem.alignBackward(entry.virtual.start, BLOCK_SIZE),
-            .end = std.mem.alignForward(entry.virtual.end, BLOCK_SIZE),
-        };
-        const physical: ?mem.Range = if (entry.physical) |phys|
-            mem.Range{
-                .start = std.mem.alignBackward(phys.start, BLOCK_SIZE),
-                .end = std.mem.alignForward(phys.end, BLOCK_SIZE),
-            }
-        else
-            null;
-        kernel_vmm.set(virtual, physical, .{ .kernel = true, .writable = true, .cachable = true }) catch |e| switch (e) {
+        // const virtual = mem.Range{
+        //     .start = std.mem.alignBackward(usize, entry.virtual.start, BLOCK_SIZE),
+        //     .end = std.mem.alignForward(usize, entry.virtual.end, BLOCK_SIZE),
+        // };
+
+        kernel_vmm.set(entry.virtual, entry.physical, .{ .kernel = true, .writable = true, .cachable = true }) catch |e| switch (e) {
             VmmError.AlreadyAllocated => {},
             else => panic(@errorReturnTrace(), "Failed mapping region in VMM {X}: {}\n", .{ entry, e }),
         };

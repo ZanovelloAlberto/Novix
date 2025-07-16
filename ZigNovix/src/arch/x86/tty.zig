@@ -57,9 +57,9 @@ var blank: u16 = undefined;
 
 /// A total of TOTAL_NUM_PAGES pages that can be saved and restored to from and to the video buffer
 var pages: [TOTAL_NUM_PAGES][TOTAL_CHAR_ON_PAGE]u16 = init: {
-    const p: [TOTAL_NUM_PAGES][TOTAL_CHAR_ON_PAGE]u16 = undefined;
+    var p: [TOTAL_NUM_PAGES][TOTAL_CHAR_ON_PAGE]u16 = undefined;
 
-    for (p) |*page| {
+    for (&p) |*page| {
         page.* = [_]u16{0} ** TOTAL_CHAR_ON_PAGE;
     }
 
@@ -571,7 +571,7 @@ fn resetGlobals() void {
     pages = init: {
         const p: [TOTAL_NUM_PAGES][TOTAL_CHAR_ON_PAGE]u16 = undefined;
 
-        for (p) |*page| {
+        for (&p) |*page| {
             page.* = [_]u16{0} ** TOTAL_CHAR_ON_PAGE;
         }
 

@@ -174,7 +174,7 @@ pub const Keyboard = struct {
     ///
     pub fn isFull(self: *const Keyboard) bool {
         // This is a circular queue so overflow is allowed
-        const vv = @addWithOverflow(QueueIndex, self.queue_end);
+        const vv = @addWithOverflow(1, self.queue_end);
         return vv[0] == self.queue_front;
     }
 
@@ -192,7 +192,7 @@ pub const Keyboard = struct {
         if (!self.isFull()) {
             self.queue[self.queue_end] = key;
             const vv = @addWithOverflow(
-                QueueIndex,
+                1,
                 self.queue_end,
             );
 
@@ -215,7 +215,7 @@ pub const Keyboard = struct {
         if (self.isEmpty()) return null;
         const key = self.queue[self.queue_front];
         const vv = @addWithOverflow(
-            QueueIndex,
+            1,
             self.queue_front,
         );
         self.queue_front = vv[0];

@@ -654,7 +654,7 @@ const TestFS = struct {
         const test_fs: TestFS = @fieldParentPtr("instance", fs.instance);
         // Get the tree that corresponds to the node. Cannot error as the file is already open so it does exist
         const tree = (getTreeNode(test_fs, node) catch unreachable) orelse unreachable;
-        const count = if (tree.data) |d| std.math.min(bytes.len, d.len) else 0;
+        const count = if (tree.data) |d| @min(bytes.len, d.len) else 0;
         const data = if (tree.data) |d| d[0..count] else "";
         std.mem.copy(u8, bytes, data);
         return count;

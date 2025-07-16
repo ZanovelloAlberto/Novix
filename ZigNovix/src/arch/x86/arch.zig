@@ -369,11 +369,11 @@ pub fn initTTY(boot_payload: BootPayload) TTY {
     // Suppress unused var warning
     _ = boot_payload;
     return .{
-        .print = tty.writeString,
-        .setCursor = tty.setCursor,
+        .print = &tty.writeString,
+        .setCursor = &tty.setCursor,
         .cols = vga.WIDTH,
         .rows = vga.HEIGHT,
-        .clear = tty.clearScreen,
+        .clear = &tty.clearScreen,
     };
 }
 

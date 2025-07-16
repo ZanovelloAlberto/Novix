@@ -3,7 +3,7 @@ const build_options = @import("build_options");
 
 pub const Serial = struct {
     /// Function that writes a single byte to the serial stream
-    pub const Write = fn (byte: u8) void;
+    pub const Write = *const fn (byte: u8) void;
 
     write: Write,
 

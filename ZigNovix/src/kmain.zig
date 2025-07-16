@@ -42,7 +42,7 @@ export var KERNEL_PHYSADDR_END: u32 = if (builtin.is_test) 0x14E000 else undefin
 
 // Just call the panic function, as this need to be in the root source file
 pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
-    panic_root.panic(error_return_trace, "{s}", .{msg});
+    panic_root.panic(error_return_trace, msg);
 }
 
 pub const log_level: std.log.Level = .debug;
@@ -58,7 +58,7 @@ pub fn log(
 
 var kernel_heap: heap.FreeListAllocator = undefined;
 
-export fn kmain(boot_payload: *arch.BootPayload) callconv(.C) noreturn {
+export fn kmain(boot_payload: arch.BootPayload) callconv(.C) noreturn {
     const serial_stream = serial.init(boot_payload);
     log_root.init(serial_stream);
 

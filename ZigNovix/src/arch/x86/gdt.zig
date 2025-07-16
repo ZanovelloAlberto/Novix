@@ -325,29 +325,31 @@ pub const USER_DATA_OFFSET: u16 = 0x20;
 pub const TSS_OFFSET: u16 = 0x28;
 
 /// The GDT entry table of NUMBER_OF_ENTRIES entries.
-var gdt_entries: [NUMBER_OF_ENTRIES]GdtEntry = init: {
+var gdt_entries: [NUMBER_OF_ENTRIES]GdtEntry = createGTD_entries();
+
+pub fn createGTD_entries() [NUMBER_OF_ENTRIES]GdtEntry {
     var gdt_entries_temp: [NUMBER_OF_ENTRIES]GdtEntry = undefined;
 
-    // Null descriptor
+    // // Null descriptor
     gdt_entries_temp[0] = makeGdtEntry(0, 0, NULL_SEGMENT, NULL_FLAGS);
 
-    // Kernel code descriptor
+    // // Kernel code descriptor
     gdt_entries_temp[1] = makeGdtEntry(0, 0xFFFFF, KERNEL_SEGMENT_CODE, PAGING_32_BIT);
 
-    // Kernel data descriptor
+    // // Kernel data descriptor
     gdt_entries_temp[2] = makeGdtEntry(0, 0xFFFFF, KERNEL_SEGMENT_DATA, PAGING_32_BIT);
 
-    // User code descriptor
+    // // User code descriptor
     gdt_entries_temp[3] = makeGdtEntry(0, 0xFFFFF, USER_SEGMENT_CODE, PAGING_32_BIT);
 
-    // User data descriptor
+    // // User data descriptor
     gdt_entries_temp[4] = makeGdtEntry(0, 0xFFFFF, USER_SEGMENT_DATA, PAGING_32_BIT);
 
-    // TSS descriptor, one each for each processor
-    // Will initialise the TSS at runtime
+    // // TSS descriptor, one each for each processor
+    // // Will initialise the TSS at runtime
     gdt_entries_temp[5] = makeGdtEntry(0, 0, NULL_SEGMENT, NULL_FLAGS);
-    break :init gdt_entries_temp;
-};
+    return gdt_entries_temp;
+}
 
 /// The GDT pointer that the CPU is loaded with that contains the base address of the GDT and the
 /// size.
@@ -381,22 +383,9 @@ fn makeGdtEntry(base: u32, limit: u20, access: AccessBits, flags: FlagBits) GdtE
     return .{
         .limit_low = @truncate(limit),
         .base_low = @truncate(base),
-        .access = .{
-            .accessed = access.accessed,
-            .read_write = access.read_write,
-            .direction_conforming = access.direction_conforming,
-            .executable = access.executable,
-            .descriptor = access.descriptor,
-            .privilege = access.privilege,
-            .present = access.present,
-        },
+        .access = access,
         .limit_high = @truncate(limit >> 16),
-        .flags = .{
-            .reserved_zero = flags.reserved_zero,
-            .is_64_bit = flags.is_64_bit,
-            .is_32_bit = flags.is_32_bit,
-            .granularity = flags.granularity,
-        },
+        .flags = flags,
         .base_high = @truncate(base >> 24),
     };
 }

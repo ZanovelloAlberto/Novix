@@ -76,7 +76,7 @@ pub const InitrdFS = struct {
         var self: InitrdFS = @fieldParentPtr("instance", fs.instance);
         const node: *const vfs.Node = @ptrCast(file_node);
         const file_header = self.opened_files.get(node) orelse return vfs.Error.NotOpened;
-        const length = std.math.min(bytes.len, file_header.content.len);
+        const length = @min(bytes.len, file_header.content.len);
         std.mem.copy(u8, bytes, file_header.content[0..length]);
         return length;
     }

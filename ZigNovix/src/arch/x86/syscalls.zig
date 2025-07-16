@@ -17,7 +17,7 @@ pub const INTERRUPT: u16 = 0x80;
 pub const NUM_HANDLERS: u16 = 256;
 
 /// A syscall handler
-pub const Handler = fn (ctx: *const arch.CpuState, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) anyerror!usize;
+pub const Handler = *const fn (ctx: *const arch.CpuState, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) anyerror!usize;
 
 /// Errors that syscall utility functions can throw
 pub const Error = error{
@@ -26,7 +26,7 @@ pub const Error = error{
 };
 
 comptime {
-    std.debug.assert(@typeInfo(syscalls.Syscall).Enum.fields.len <= NUM_HANDLERS);
+    std.debug.assert(@typeInfo(syscalls.Syscall).@"enum".fields.len <= NUM_HANDLERS);
 }
 
 /// The array of registered syscalls
