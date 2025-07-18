@@ -193,7 +193,7 @@ pub const RuntimeStep = struct {
     ///     Error.TestFailed            - The error if the test failed.
     ///
     fn make(step: *Step) (Thread.SpawnError || ChildProcess.SpawnError || Allocator.Error || Error)!void {
-        const self = @fieldParentPtr(RuntimeStep, "step", step);
+        const self: RuntimeStep = @fieldParentPtr("step", step);
 
         // Create the qemu process
         self.os_proc = try ChildProcess.init(self.argv, self.builder.allocator);

@@ -40,7 +40,7 @@ pub fn Bitmap(comptime num_entries: ?usize, comptime BitmapType: type) type {
 
         num_bitmaps: usize,
         num_entries: usize,
-        bitmaps: if (static) [std.mem.alignForward(num_entries.?, ENTRIES_PER_BITMAP) / ENTRIES_PER_BITMAP]BitmapType else []BitmapType,
+        bitmaps: if (static) [std.mem.alignForward(usize, num_entries.?, ENTRIES_PER_BITMAP) / ENTRIES_PER_BITMAP]BitmapType else []BitmapType,
         num_free_entries: usize,
         allocator: if (static) ?Allocator else Allocator,
 
@@ -52,7 +52,7 @@ pub fn Bitmap(comptime num_entries: ?usize, comptime BitmapType: type) type {
         ///         The number of BitmapType required to store this many entries will be allocated (dynamically or statically) and each will be zeroed.
         ///     IN allocator: ?Allocator or Allocator - The allocator to use when allocating the BitmapTypes required. Ignored if statically allocated.
         ///
-        /// Return: Self.
+        /// Return: Self.I
         ///     The bitmap instance.
         ///
         /// Error: Allocator.Error

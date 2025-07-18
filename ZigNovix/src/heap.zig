@@ -378,102 +378,39 @@ pub const FreeListAllocator = struct {
     /// Error: std.Allocator.Error
     ///     std.Allocator.Error.OutOfMemory - There wasn't enough memory left to fulfill the request
     ///
-    pub fn alloc(self: *Self, size: usize, alignment: u29, size_alignment: u29, ret_addr: usize) Allocator.Error![]u8 {
+    pub fn alloc(self: *Self, size: usize, alignment: std.mem.Alignment, ret_addr: usize) Allocator.Error![]u8 {
         // Suppress unused var warning
         _ = ret_addr;
-        if (self.first_free == null) return Allocator.Error.OutOfMemory;
+        _ = alignment;
+        if (size == 0) return Allocator.Error.OutOfMemory;
 
-        // Get the real size being allocated, which is the aligned size or the size of a header (whichever is largest)
         // The size must be at least the size of a header so that it can be freed properly
-        const real_size = @max(if (size_alignment > 1) std.mem.alignAllocLen(size, size, size_alignment) else size, @sizeOf(Header));
+        const real_size = @max(size, @sizeOf(Header));
 
-        var free_header = self.first_free;
+        // Search for a free block
         var prev: ?*Header = null;
-        var backup: ?*Header = null;
-        var backup_prev: ?*Header = null;
+        var header = self.first_free;
+        while (header) |h| {
+            if (h.size >= real_size) {
+                // Remove from free list
+                self.registerFreeHeader(prev, h.next_free);
 
-        // Search for the first node that can fit the request
-        const alloc_to = find: while (free_header) |h| : ({
+                // If the block is big enough to split, do so
+                if ((h.size - real_size) >= (@sizeOf(Header) + 16)) {
+                    const new_header_addr = @intFromPtr(h) + @sizeOf(Header) + real_size;
+                    const new_header = insertFreeHeader(new_header_addr, h.size - real_size - @sizeOf(Header), h.next_free);
+                    self.registerFreeHeader(prev, new_header);
+                    h.size = real_size;
+                }
+
+                // Return pointer to usable memory (after header)
+                return @as([*]u8, @ptrFromInt(@intFromPtr(h) + @sizeOf(Header)))[0..size];
+            }
             prev = h;
-            free_header = h.next_free;
-        }) {
-            if (h.size + @sizeOf(Header) < real_size) {
-                continue;
-            }
-            // The address at which to allocate. This will clobber the header.
-            const addr = @intFromPtr(h);
-            var alignment_padding: usize = 0;
-
-            if ((alignment > 1 and !std.mem.isAligned(addr, alignment)) or !std.mem.isAligned(addr, @alignOf(Header))) {
-                alignment_padding = alignment - (addr % alignment);
-                // If the size can't fit the alignment padding then try the next one
-                if (h.size + @sizeOf(Header) < real_size + alignment_padding) {
-                    continue;
-                }
-                // If a new node couldn't be created from the space left by alignment padding then try the next one
-                // This check is necessary as otherwise we'd have wasted space that could never be allocated
-                // We do however set the backup variable to this node so that in the unfortunate case that no other nodes can take the allocation, we allocate it here and sacrifice the wasted space
-                if (alignment_padding < @sizeOf(Header)) {
-                    backup = h;
-                    backup_prev = prev;
-                    continue;
-                }
-            }
-
-            // If we wouldn't be able to create a node with any unused space, try the next one
-            // This check is necessary as otherwise we'd have wasted space that could never be allocated
-            // Much like with the alignment padding, we set this node as a backup
-            if (@sizeOf(Header) + h.size - alignment_padding - real_size < @sizeOf(Header)) {
-                backup = h;
-                backup_prev = prev;
-                continue;
-            }
-
-            break :find h;
-        } else backup;
-
-        if (alloc_to == backup) {
-            prev = backup_prev;
+            header = h.next_free;
         }
 
-        if (alloc_to) |x| {
-            var header = x;
-            const addr = @intFromPtr(header);
-            // Allocate to this node
-            var alignment_padding: usize = 0;
-            if (alignment > 1 and !std.mem.isAligned(addr, alignment)) {
-                alignment_padding = alignment - (addr % alignment);
-            }
-
-            // If there is enough unused space to the right of this node, need to align that pointer to the alignment of the header
-            if (header.size > real_size + alignment_padding) {
-                const at = @intFromPtr(header) + real_size + alignment_padding;
-                if (!std.mem.isAligned(at, @alignOf(Header))) {
-                    alignment_padding += @alignOf(Header) - (at % @alignOf(Header));
-                }
-            }
-
-            // If we were going to use alignment padding and it's big enough to fit a new node, create a node to the left using the unused space
-            if (alignment_padding >= @sizeOf(Header)) {
-                // Since the header's address is going to be reused for the smaller one being created, backup the header to its new position
-                header = insertFreeHeader(addr + alignment_padding, header.size - alignment_padding, header.next_free);
-
-                const left = insertFreeHeader(addr, alignment_padding - @sizeOf(Header), header.next_free);
-                // The previous should link to the new one instead
-                self.registerFreeHeader(prev, left);
-                prev = left;
-                alignment_padding = 0;
-            }
-
-            // If there is enough unused space to the right of this node then create a smaller node
-            if (header.size > real_size + alignment_padding) {
-                header.next_free = insertFreeHeader(@intFromPtr(header) + real_size + alignment_padding, header.size - real_size - alignment_padding, header.next_free);
-            }
-            self.registerFreeHeader(prev, header.next_free);
-
-            return @as([*]u8, @ptrFromInt(@intFromPtr(header)))[0..std.mem.alignAllocLen(size, size, size_alignment)];
-        }
-
+        // No suitable free block found
         return Allocator.Error.OutOfMemory;
     }
 

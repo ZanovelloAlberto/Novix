@@ -651,7 +651,7 @@ pub fn init(mem_profile: *const MemProfile) void {
     pit.init();
     rtc.init();
 
-    syscalls.init();
+    // syscalls.init();
 
     // Initialise the VGA and TTY here since their tests belong the architecture and so should be a part of the
     // arch init test messages
