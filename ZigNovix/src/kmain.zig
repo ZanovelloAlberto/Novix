@@ -41,9 +41,9 @@ export var KERNEL_PHYSADDR_START: u32 = if (builtin.is_test) 0x100000 else undef
 export var KERNEL_PHYSADDR_END: u32 = if (builtin.is_test) 0x14E000 else undefined;
 
 // Just call the panic function, as this need to be in the root source file
-pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
-    panic_root.panic(error_return_trace, msg);
-}
+// pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace) noreturn {
+//     panic_root.panic(error_return_trace, msg);
+// }
 
 pub const log_level: std.log.Level = .debug;
 // Define root.log to override the std implementation
@@ -61,15 +61,18 @@ pub const std_options: std.Options = .{
 };
 
 var kernel_heap: heap.FreeListAllocator = undefined;
-var alloc_buffer: [2048]u8 = undefined; // 16KB buffer for FixedBufferAllocator
-var fb_alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
-const alloc = fb_alloc.allocator();
+// var alloc_buffer: [2048]u8 = undefined; // 16KB buffer for FixedBufferAllocator
+// var fb_alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
+// const alloc = fb_alloc.allocator();
+const alloc = mem.fixed_buffer_allocator.allocator();
 
 export fn kmain(boot_payload: arch.BootPayload) callconv(.C) noreturn {
     const serial_stream = serial.init(boot_payload);
     log_root.init(serial_stream);
 
     const mem_profile = arch.initMem(boot_payload) catch |e| {
+        // _ = e;
+
         panic_root.panic(@errorReturnTrace(), "Failed to initialise memory profile: {}", .{e});
     };
     // var fixed_allocator = mem_profile.fixed_allocator;

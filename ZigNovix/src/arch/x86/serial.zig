@@ -125,17 +125,20 @@ pub fn init(baud: u32, port: Port) SerialError!void {
     const divisor: u16 = try baudDivisor(baud);
     const port_int = @intFromEnum(port);
     // Send a byte to start setting the baudrate
-    arch.out(port_int + LCR, lcrValue(0, false, false, 1) catch |e| {
-        panic(@errorReturnTrace(), "Failed to initialise serial output setup: {}", .{e});
-    });
+    arch.out(port_int + LCR, lcrValue(0, false, false, 1) catch unreachable);
+
+    // catch |e| {
+    //     panic(@errorReturnTrace(), "Failed to initialise serial output setup: {}", .{e});
+    // });
     // Send the divisor's lsb
     arch.out(port_int, @as(u8, @truncate(divisor)));
     // Send the divisor's msb
     arch.out(port_int + 1, @as(u8, @truncate(divisor >> 8)));
     // Send the properties to use
-    arch.out(port_int + LCR, lcrValue(CHAR_LEN, SINGLE_STOP_BIT, PARITY_BIT, 0) catch |e| {
-        panic(@errorReturnTrace(), "Failed to setup serial properties: {}", .{e});
-    });
+    arch.out(port_int + LCR, lcrValue(CHAR_LEN, SINGLE_STOP_BIT, PARITY_BIT, 0) catch unreachable);
+    //  catch |e| {
+    // panic(@errorReturnTrace(), "Failed to setup serial properties: {}", .{e});
+    // });
     // Stop initialisation
     arch.out(port_int + 1, @as(u8, 0));
 }

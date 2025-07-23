@@ -39,7 +39,7 @@ pub fn build(b: *std.Build) void {
 
     // kernel.addOptions("build_options", unit_test_options);
 
-    kernel.setLinkerScript(b.path("src/arch/x86/link.ld"));
+    kernel.setLinkerScript(b.path("src/linker.ld"));
     b.installArtifact(kernel);
 
     const kernel_step = b.step("kernel", "Build the kernel");

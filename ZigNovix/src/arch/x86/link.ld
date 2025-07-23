@@ -35,11 +35,6 @@ SECTIONS {
 		*(.bss)
 	}
 
-	.bss.stack ALIGN(4K) : AT (ADDR(.bss.stack) - KERNEL_ADDR_OFFSET) {
-		KERNEL_STACK_START = .;
-		KEEP(*(.bss.stack))
-		KERNEL_STACK_END = .;
-	}
 
 	KERNEL_VADDR_END = .;
 	KERNEL_PHYSADDR_END = . - KERNEL_ADDR_OFFSET;

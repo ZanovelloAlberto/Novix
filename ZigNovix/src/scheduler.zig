@@ -17,7 +17,7 @@ const pmm = @import("pmm.zig");
 const Task = task.Task;
 const EntryPoint = task.EntryPoint;
 const Allocator = std.mem.Allocator;
-const TailQueue = std.TailQueue;
+const TailQueue = std.DoublyLinkedList;
 
 /// The default stack size of a task. Currently this is set to a page size.
 const STACK_SIZE: u32 = arch.MEMORY_BLOCK_SIZE / @sizeOf(usize);

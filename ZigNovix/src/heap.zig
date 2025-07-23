@@ -78,10 +78,10 @@ pub const FreeListAllocator = struct {
     // };
 
     const vtable = Allocator.VTable{
-        .alloc = &alloc,
-        .resize = &resize,
-        .free = &free,
-        .remap = &remap,
+        .alloc = @ptrCast(&alloc),
+        .resize = @ptrCast(&resize),
+        .free = @ptrCast(&free),
+        .remap = @ptrCast(&remap),
     };
 
     pub fn allocator(self: *Self) Allocator {
@@ -263,7 +263,7 @@ pub const FreeListAllocator = struct {
             self.free(old_mem, old_align, ret_addr) catch false;
             return true;
         }
-        if (new_size == old_mem.len) return new_size;
+        if (new_size == old_mem.len) return true;
 
         const end = @intFromPtr(old_mem.ptr) + old_mem.len;
         var real_size = if (size_alignment > 1) std.mem.alignAllocLen(old_mem.len, new_size, size_alignment) else new_size;
@@ -290,12 +290,12 @@ pub const FreeListAllocator = struct {
         if (real_size > old_mem.len) {
             if (next) |n| {
                 // If the free neighbour isn't big enough then fail
-                if (old_mem.len + n.size + @sizeOf(Header) < real_size) return null;
+                if (old_mem.len + n.size + @sizeOf(Header) < real_size) return false;
 
                 const size_diff = real_size - old_mem.len;
                 const consumes_whole_neighbour = size_diff == n.size + @sizeOf(Header);
                 // If the space left over in the free neighbour from the resize isn't enough to fit a new node, then fail
-                if (!consumes_whole_neighbour and n.size + @sizeOf(Header) - size_diff < @sizeOf(Header)) return null;
+                if (!consumes_whole_neighbour and n.size + @sizeOf(Header) - size_diff < @sizeOf(Header)) return false;
                 var new_next: ?*Header = n.next_free;
                 // We don't do any splitting when consuming the whole neighbour
                 if (!consumes_whole_neighbour) {
@@ -304,7 +304,7 @@ pub const FreeListAllocator = struct {
                     new_next = insertFreeHeader(end + size_diff, n.size - size_diff, n.next_free);
                 }
                 self.registerFreeHeader(prev, new_next);
-                return real_size;
+                return true;
             }
             // The neighbour isn't free so we can't expand into it
             return false;
@@ -378,11 +378,11 @@ pub const FreeListAllocator = struct {
     /// Error: std.Allocator.Error
     ///     std.Allocator.Error.OutOfMemory - There wasn't enough memory left to fulfill the request
     ///
-    pub fn alloc(self: *Self, size: usize, alignment: std.mem.Alignment, ret_addr: usize) Allocator.Error![]u8 {
+    pub fn alloc(self: *Self, size: usize, alignment: std.mem.Alignment, ret_addr: usize) ?[*]u8 {
         // Suppress unused var warning
         _ = ret_addr;
         _ = alignment;
-        if (size == 0) return Allocator.Error.OutOfMemory;
+        if (size == 0) return null;
 
         // The size must be at least the size of a header so that it can be freed properly
         const real_size = @max(size, @sizeOf(Header));
@@ -404,14 +404,14 @@ pub const FreeListAllocator = struct {
                 }
 
                 // Return pointer to usable memory (after header)
-                return @as([*]u8, @ptrFromInt(@intFromPtr(h) + @sizeOf(Header)))[0..size];
+                return @as([*]u8, @ptrFromInt(@intFromPtr(h) + @sizeOf(Header)));
             }
             prev = h;
             header = h.next_free;
         }
 
         // No suitable free block found
-        return Allocator.Error.OutOfMemory;
+        return null;
     }
 
     test "init" {

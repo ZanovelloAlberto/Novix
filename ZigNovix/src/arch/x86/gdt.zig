@@ -83,7 +83,7 @@ const GdtEntry = packed struct {
 };
 
 /// The TSS entry structure
-const Tss = packed struct {
+const Tss = extern struct {
     /// Pointer to the previous TSS entry
     prev_tss: u16,
     reserved1: u16,
@@ -359,7 +359,7 @@ var gdt_ptr: GdtPtr = GdtPtr{
 };
 
 /// The main task state segment entry.
-pub var main_tss_entry: Tss = init: {
+export var main_tss_entry: Tss = init: {
     var tss_temp = std.mem.zeroes(Tss);
     tss_temp.ss0 = KERNEL_DATA_OFFSET;
     tss_temp.io_permissions_base_offset = @sizeOf(Tss);

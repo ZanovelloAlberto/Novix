@@ -25,6 +25,8 @@ var stack_bytes: [16 * 1024]u8 align(16) linksection(".bss") = undefined;
 export fn _start() callconv(.Naked) noreturn {
     // We use inline assembly to set up the stack before jumping to
     // our kernel main.
+    while (true) {}
+
     asm volatile (
         \\ movl %[stack_top], %%esp
         \\ movl %%esp, %%ebp

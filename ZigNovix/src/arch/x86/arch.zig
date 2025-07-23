@@ -348,9 +348,11 @@ fn writeSerialCom1(byte: u8) void {
 pub fn initSerial(boot_payload: BootPayload) Serial {
     // Suppress unused var warning
     _ = boot_payload;
-    serial.init(serial.DEFAULT_BAUDRATE, serial.Port.COM1) catch |e| {
-        panic(@errorReturnTrace(), "Failed to initialise serial: {}", .{e});
-    };
+    serial.init(serial.DEFAULT_BAUDRATE, serial.Port.COM1) catch unreachable;
+    //  |e| {
+    //     // _ = e;
+    //     panic(@errorReturnTrace(), "Failed to initialise serial: {}", .{e});
+    // };
     return Serial{
         .write = writeSerialCom1,
     };

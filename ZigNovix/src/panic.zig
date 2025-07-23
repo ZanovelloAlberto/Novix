@@ -178,7 +178,7 @@ fn parseChar(ptr: [*]const u8, end: *const u8) PanicError!u8 {
 ///
 fn parseWhitespace(ptr: [*]const u8, end: *const u8) PanicError![*]const u8 {
     var i: u32 = 0;
-    while (std.ascii.isSpace(try parseChar(ptr + i, end))) : (i += 1) {}
+    while (' ' != (try parseChar(ptr + i, end))) : (i += 1) {}
     return ptr + i;
 }
 
@@ -200,7 +200,7 @@ fn parseWhitespace(ptr: [*]const u8, end: *const u8) PanicError![*]const u8 {
 ///
 fn parseNonWhitespace(ptr: [*]const u8, end: *const u8) PanicError![*]const u8 {
     var i: u32 = 0;
-    while (!std.ascii.isSpace(try parseChar(ptr + i, end))) : (i += 1) {}
+    while (' ' != (try parseChar(ptr + i, end))) : (i += 1) {}
     return ptr + i;
 }
 
@@ -338,7 +338,7 @@ pub fn initSymbols(mem_profile: *const mem.MemProfile, allocator: Allocator) (Pa
     errdefer syms.deinit();
     var kmap_ptr: [*]u8 = @ptrFromInt(kmap_start);
     while (@intFromPtr(kmap_ptr) < kmap_end - 1) {
-        const entry = try parseMapEntry(&kmap_ptr, @ptrFromInt(kmap_end));
+        const entry = try parseMapEntry(@ptrCast(&kmap_ptr), @ptrFromInt(kmap_end));
         try syms.addEntry(entry);
     }
     symbol_map = syms;
