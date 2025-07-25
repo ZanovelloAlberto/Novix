@@ -26,10 +26,10 @@ pub const ConsoleColors = enum(u8) {
 
 var row: usize = 0;
 var column: usize = 0;
-var color = vgaEntryColor(ConsoleColors.LightGray, ConsoleColors.Black);
+pub var color = vgaEntryColor(ConsoleColors.LightGray, ConsoleColors.Black);
 var buffer = @as([*]volatile u16, @ptrFromInt(0xB8000));
 
-fn vgaEntryColor(fg: ConsoleColors, bg: ConsoleColors) u8 {
+pub fn vgaEntryColor(fg: ConsoleColors, bg: ConsoleColors) u8 {
     return @intFromEnum(fg) | (@intFromEnum(bg) << 4);
 }
 
@@ -69,7 +69,15 @@ pub fn putChar(c: u8) void {
 
 pub fn puts(data: []const u8) void {
     for (data) |c|
-        putChar(c);
+        switch (c) {
+            '\n' => {
+                row += 1;
+                column = 0;
+            },
+            else => {
+                putChar(c);
+            },
+        };
 }
 
 pub const writer = Writer(void, error{}, callback){ .context = {} };
